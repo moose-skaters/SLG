@@ -1,0 +1,14 @@
+{
+  "bindings": [
+    {
+      "property_name": "_MainTex",
+      "filename": "Texture_5543.tga",
+      "resource_id": "ResourceId::5543"
+    },
+    {
+      "property_name": "_PlaneBlurShadowMap",
+      "filename": "Texture_4322.tga",
+      "resource_id": "ResourceId::4322"
+    }
+  ]
+}

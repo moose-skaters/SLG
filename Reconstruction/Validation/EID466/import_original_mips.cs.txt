@@ -1,0 +1,17 @@
+if(!UnityEditor.AssetDatabase.IsValidFolder("Assets/LastZ/Shader/EID466Textures")) UnityEditor.AssetDatabase.CreateFolder("Assets/LastZ/Shader","EID466Textures");
+var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>("Assets/RdocMeshes/eid_466/eid_466.mat");
+var ids=new[]{5681,5627,5620,5618,5619,5626};
+var names=new[]{"_Control","_SpecMaskMap","_Splat0","_Splat1","_Splat2","_Splat3"};
+for(int i=0;i<ids.Length;i++){
+ var data=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("D:/Last-Z/Reconstruction/Validation/EID466/raw_"+ids[i]+".json"));
+ var mips=(Newtonsoft.Json.Linq.JArray)data["mips"];
+ var stream=new System.IO.MemoryStream();
+ foreach(var mip in mips){var bytes=System.Convert.FromBase64String((string)mip["data"]);stream.Write(bytes,0,bytes.Length);}
+ var tex=new UnityEngine.Texture2D((int)mips[0]["width"],(int)mips[0]["height"],UnityEngine.TextureFormat.RGBA32,mips.Count,ids[i]==5681||ids[i]==5627);
+ tex.name="EID466_"+names[i]+"_OriginalMips";tex.LoadRawTextureData(stream.ToArray());tex.Apply(false,true);
+ tex.wrapMode=UnityEngine.TextureWrapMode.Repeat;tex.filterMode=UnityEngine.FilterMode.Bilinear;tex.anisoLevel=0;
+ string path="Assets/LastZ/Shader/EID466Textures/Texture_"+ids[i]+".asset";
+ UnityEditor.AssetDatabase.CreateAsset(tex,path);mat.SetTexture(names[i],tex);
+}
+mat.SetFloat("_TextureMipBias",-0.584962487f);UnityEditor.EditorUtility.SetDirty(mat);UnityEditor.AssetDatabase.SaveAssets();
+return "Original GPU mip chains loaded; no regeneration or recompression.";

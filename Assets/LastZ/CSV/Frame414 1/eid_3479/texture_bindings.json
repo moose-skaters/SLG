@@ -1,0 +1,14 @@
+{
+  "bindings": [
+    {
+      "property_name": "_MainTex",
+      "filename": "_MainTex__Texture_6825.tga",
+      "resource_id": "ResourceId::6825"
+    },
+    {
+      "property_name": "_NoiseTex",
+      "filename": "_NoiseTex__Texture_6823.tga",
+      "resource_id": "ResourceId::6823"
+    }
+  ]
+}

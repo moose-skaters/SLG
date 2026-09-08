@@ -1,0 +1,19 @@
+{
+  "bindings": [
+    {
+      "property_name": "_MainTex",
+      "filename": "_MainTex__Texture_5291.tga",
+      "resource_id": "ResourceId::5291"
+    },
+    {
+      "property_name": "_MainTex02",
+      "filename": "_MainTex02__Texture_7283.tga",
+      "resource_id": "ResourceId::7283"
+    },
+    {
+      "property_name": "_MaskTex",
+      "filename": "_MaskTex__Texture_23247.tga",
+      "resource_id": "ResourceId::23247"
+    }
+  ]
+}

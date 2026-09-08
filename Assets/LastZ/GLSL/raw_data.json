@@ -1,0 +1,2352 @@
+{
+  "eid": 466,
+  "api": "OpenGL",
+  "draw_call": {
+    "name": "glDrawElementsInstanced()",
+    "type": "Indexed Drawcall",
+    "flags": [
+      "Drawcall",
+      "Indexed",
+      "Instanced"
+    ],
+    "indices": 600,
+    "instances": 6,
+    "render_targets": [
+      "ResourceId::29999"
+    ],
+    "depth_target": "ResourceId::30001"
+  },
+  "frame_stats": {
+    "total_actions": 797,
+    "draw_calls": 577,
+    "dispatches": 0,
+    "clears": 152,
+    "copies": 0,
+    "presents": 1,
+    "markers": 57
+  },
+  "pipeline": {
+    "shaders": {
+      "vs": {
+        "resource_id": "ResourceId::29881",
+        "entry_point": "main"
+      },
+      "ps": {
+        "resource_id": "ResourceId::29882",
+        "entry_point": "main"
+      }
+    },
+    "cb_bindings": {
+      "vs": [
+        {
+          "slot": 0,
+          "name": "UnityInstancing_PerDraw0",
+          "byte_size": 16384,
+          "variable_count": 1
+        },
+        {
+          "slot": 0,
+          "name": "UnityInstancing_PerDraw2",
+          "byte_size": 14336,
+          "variable_count": 1
+        },
+        {
+          "slot": 0,
+          "name": "UnityPerDraw",
+          "byte_size": 656,
+          "variable_count": 28
+        },
+        {
+          "slot": 0,
+          "name": "UnityPerMaterial",
+          "byte_size": 448,
+          "variable_count": 41
+        },
+        {
+          "slot": 0,
+          "name": "$Globals",
+          "byte_size": 0,
+          "variable_count": 6
+        }
+      ],
+      "ps": [
+        {
+          "slot": 0,
+          "name": "UnityPerDraw",
+          "byte_size": 656,
+          "variable_count": 28
+        },
+        {
+          "slot": 0,
+          "name": "UnityPerMaterial",
+          "byte_size": 448,
+          "variable_count": 41
+        },
+        {
+          "slot": 0,
+          "name": "$Globals",
+          "byte_size": 0,
+          "variable_count": 5
+        }
+      ]
+    },
+    "textures": {
+      "vs": [],
+      "ps": [
+        {
+          "slot": 0,
+          "name": "_Splat_Golobal",
+          "resource_id": "ResourceId::4311",
+          "width": 4,
+          "height": 4,
+          "format": "R8G8B8A8_UNORM"
+        },
+        {
+          "slot": 1,
+          "name": "Texture 5681",
+          "resource_id": "ResourceId::5681",
+          "width": 512,
+          "height": 512,
+          "format": "R8G8B8A8_UNORM"
+        },
+        {
+          "slot": 2,
+          "name": "Texture 4312",
+          "resource_id": "ResourceId::4312",
+          "width": 4,
+          "height": 4,
+          "format": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 3,
+          "name": "Texture 4322",
+          "resource_id": "ResourceId::4322",
+          "width": 16,
+          "height": 16,
+          "format": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 4,
+          "name": "Texture 4312",
+          "resource_id": "ResourceId::4312",
+          "width": 4,
+          "height": 4,
+          "format": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 5,
+          "name": "Texture 5627",
+          "resource_id": "ResourceId::5627",
+          "width": 512,
+          "height": 512,
+          "format": "R8G8B8A8_UNORM"
+        },
+        {
+          "slot": 6,
+          "name": "Texture 5620",
+          "resource_id": "ResourceId::5620",
+          "width": 256,
+          "height": 256,
+          "format": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 7,
+          "name": "Texture 5618",
+          "resource_id": "ResourceId::5618",
+          "width": 256,
+          "height": 256,
+          "format": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 8,
+          "name": "Texture 5619",
+          "resource_id": "ResourceId::5619",
+          "width": 256,
+          "height": 256,
+          "format": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 9,
+          "name": "Texture 5626",
+          "resource_id": "ResourceId::5626",
+          "width": 256,
+          "height": 256,
+          "format": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 10,
+          "name": "Texture 4316",
+          "resource_id": "ResourceId::4316",
+          "width": 4,
+          "height": 4,
+          "format": "R8G8B8A8_SRGB"
+        }
+      ]
+    },
+    "render_targets": [
+      {
+        "index": 0,
+        "resource_id": "ResourceId::29999",
+        "format": "R8G8B8A8_SRGB",
+        "width": 720,
+        "height": 1280
+      }
+    ],
+    "depth_target": "ResourceId::30001"
+  },
+  "cb": {
+    "vs": {
+      "UnityInstancing_PerDraw0": {
+        "unity_Builtins0Array": {
+          "o": 0,
+          "t": "struct_array",
+          "v": "<array of 128 struct>",
+          "array_len": 128
+        }
+      },
+      "UnityInstancing_PerDraw2": {
+        "unity_Builtins2Array": {
+          "o": 0,
+          "t": "struct_array",
+          "v": "<array of 128 struct>",
+          "array_len": 128
+        }
+      },
+      "UnityPerDraw": {
+        "hlslcc_mtx4x4unity_ObjectToWorld": {
+          "o": 0,
+          "t": "vec4x4",
+          "v": [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        },
+        "hlslcc_mtx4x4unity_WorldToObject": {
+          "o": 64,
+          "t": "vec4x4",
+          "v": [
+            [
+              1.0,
+              -0.0,
+              0.0,
+              0.0
+            ],
+            [
+              -0.0,
+              1.0,
+              -0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0,
+              0.0
+            ],
+            [
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0
+            ]
+          ]
+        },
+        "unity_LODFade": {
+          "o": 128,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_WorldTransformParams": {
+          "o": 144,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "unity_RenderingLayer": {
+          "o": 160,
+          "t": "vec4",
+          "v": [
+            1.401298464324817e-45,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_LightData": {
+          "o": 176,
+          "t": "vec4",
+          "v": [
+            20.0,
+            1.0,
+            1.0,
+            0.0
+          ]
+        },
+        "unity_LightIndices": {
+          "o": 192,
+          "t": "vec4x2",
+          "v": "all [0.0, 0.0, 0.0, 0.0]"
+        },
+        "unity_ProbesOcclusion": {
+          "o": 224,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "unity_SpecCube0_HDR": {
+          "o": 240,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SpecCube1_HDR": {
+          "o": 256,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SpecCube0_BoxMax": {
+          "o": 272,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SpecCube0_BoxMin": {
+          "o": 288,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SpecCube0_ProbePosition": {
+          "o": 304,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SpecCube1_BoxMax": {
+          "o": 320,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SpecCube1_BoxMin": {
+          "o": 336,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SpecCube1_ProbePosition": {
+          "o": 352,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_LightmapST": {
+          "o": 368,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_DynamicLightmapST": {
+          "o": 384,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "unity_SHAr": {
+          "o": 400,
+          "t": "vec4",
+          "v": [
+            0.0,
+            5.424022674560547e-06,
+            0.0,
+            0.9999691843986511
+          ]
+        },
+        "unity_SHAg": {
+          "o": 416,
+          "t": "vec4",
+          "v": [
+            0.0,
+            4.470348358154297e-06,
+            0.0,
+            0.9999756813049316
+          ]
+        },
+        "unity_SHAb": {
+          "o": 432,
+          "t": "vec4",
+          "v": [
+            0.0,
+            3.0100345611572266e-06,
+            0.0,
+            0.9999861121177673
+          ]
+        },
+        "unity_SHBr": {
+          "o": 448,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            -1.6540288925170898e-06,
+            0.0
+          ]
+        },
+        "unity_SHBg": {
+          "o": 464,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            -1.385807991027832e-06,
+            0.0
+          ]
+        },
+        "unity_SHBb": {
+          "o": 480,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            -9.611248970031738e-07,
+            0.0
+          ]
+        },
+        "unity_SHC": {
+          "o": 496,
+          "t": "vec4",
+          "v": [
+            -1.5497207641601562e-06,
+            -1.2814998626708984e-06,
+            -8.717179298400879e-07,
+            1.0
+          ]
+        },
+        "hlslcc_mtx4x4unity_MatrixPreviousM": {
+          "o": 512,
+          "t": "vec4x4",
+          "v": [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        },
+        "hlslcc_mtx4x4unity_MatrixPreviousMI": {
+          "o": 576,
+          "t": "vec4x4",
+          "v": [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        },
+        "unity_MotionVectorsParams": {
+          "o": 640,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "UnityPerMaterial": {
+        "_AlphaScale": {
+          "o": 0,
+          "t": "float",
+          "v": 0.0
+        },
+        "_SparkMap_ST": {
+          "o": 16,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_WorldEdge": {
+          "o": 32,
+          "t": "vec4",
+          "v": [
+            512.0,
+            512.0,
+            67.5,
+            122.0
+          ]
+        },
+        "_Control_ST": {
+          "o": 48,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_BaseNormal_ST": {
+          "o": 64,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_NormalMask_ST": {
+          "o": 80,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_Control_TexelSize": {
+          "o": 96,
+          "t": "vec4",
+          "v": [
+            0.001953125,
+            0.001953125,
+            512.0,
+            512.0
+          ]
+        },
+        "_SparkColor": {
+          "o": 112,
+          "t": "vec4",
+          "v": [
+            1.0,
+            0.9078850746154785,
+            0.53733891248703,
+            1.0
+          ]
+        },
+        "_Color_Golobal": {
+          "o": 128,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "_Splat0_ST": {
+          "o": 144,
+          "t": "vec4",
+          "v": [
+            25.0,
+            25.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_Splat1_ST": {
+          "o": 160,
+          "t": "vec4",
+          "v": [
+            30.0,
+            30.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_Splat2_ST": {
+          "o": 176,
+          "t": "vec4",
+          "v": [
+            40.0,
+            40.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_Splat3_ST": {
+          "o": 192,
+          "t": "vec4",
+          "v": [
+            30.0,
+            30.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_Splat_Golobal_ST": {
+          "o": 208,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_Color_Splat1": {
+          "o": 224,
+          "t": "vec4",
+          "v": [
+            0.8796225786209106,
+            0.7529424428939819,
+            0.6307573318481445,
+            0.0
+          ]
+        },
+        "_Color_Splat2": {
+          "o": 240,
+          "t": "vec4",
+          "v": [
+            0.7083760499954224,
+            0.7083760499954224,
+            0.7083760499954224,
+            0.0
+          ]
+        },
+        "_Color_Splat3": {
+          "o": 256,
+          "t": "vec4",
+          "v": [
+            0.5028865933418274,
+            0.48514997959136963,
+            0.33716365694999695,
+            0.0
+          ]
+        },
+        "_Color_Splat4": {
+          "o": 272,
+          "t": "vec4",
+          "v": [
+            0.7835380434989929,
+            0.7011021375656128,
+            0.4677838385105133,
+            0.0
+          ]
+        },
+        "_specColor": {
+          "o": 288,
+          "t": "vec4",
+          "v": [
+            1.0,
+            0.8469852209091187,
+            0.35141828656196594,
+            1.0
+          ]
+        },
+        "_MinHeight": {
+          "o": 304,
+          "t": "float",
+          "v": 0.0
+        },
+        "_MaxHeight": {
+          "o": 308,
+          "t": "float",
+          "v": -5.0
+        },
+        "_HeightBlendScale": {
+          "o": 312,
+          "t": "float",
+          "v": 0.25
+        },
+        "_Weight": {
+          "o": 316,
+          "t": "float",
+          "v": 0.20000000298023224
+        },
+        "_NormalMinHeight": {
+          "o": 320,
+          "t": "float",
+          "v": 100.0
+        },
+        "_NormalMaxHeight": {
+          "o": 324,
+          "t": "float",
+          "v": 200.0
+        },
+        "_BaseNormalScale": {
+          "o": 328,
+          "t": "float",
+          "v": 1.0
+        },
+        "_Color_Splat1_Intensity": {
+          "o": 332,
+          "t": "float",
+          "v": 1.0
+        },
+        "_Color_Splat2_Intensity": {
+          "o": 336,
+          "t": "float",
+          "v": 1.0
+        },
+        "_Color_Splat3_Intensity": {
+          "o": 340,
+          "t": "float",
+          "v": 1.0
+        },
+        "_Color_Splat4_Intensity": {
+          "o": 344,
+          "t": "float",
+          "v": 1.0
+        },
+        "_SparkColorIntensity": {
+          "o": 348,
+          "t": "float",
+          "v": 0.05000000074505806
+        },
+        "_specScale": {
+          "o": 352,
+          "t": "float",
+          "v": 0.05000000074505806
+        },
+        "_WorldUVON": {
+          "o": 356,
+          "t": "float",
+          "v": 1.0
+        },
+        "_HeightBlendOn": {
+          "o": 360,
+          "t": "float",
+          "v": 0.0
+        },
+        "_LightColorDesat": {
+          "o": 364,
+          "t": "float",
+          "v": 1.0
+        },
+        "_BlurPlaneShadowColor": {
+          "o": 368,
+          "t": "vec4",
+          "v": [
+            0.0,
+            0.0,
+            0.0,
+            0.5
+          ]
+        },
+        "_FakeNormalOn": {
+          "o": 384,
+          "t": "float",
+          "v": 0.0
+        },
+        "_FakeNormalDir": {
+          "o": 400,
+          "t": "vec4",
+          "v": [
+            0.0010000000474974513,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "_FakeNormalChannel": {
+          "o": 416,
+          "t": "float",
+          "v": 0.0
+        },
+        "_FakeNormalScale": {
+          "o": 420,
+          "t": "float",
+          "v": 0.10000000149011612
+        },
+        "_EdgeColor01": {
+          "o": 432,
+          "t": "vec3",
+          "v": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "$Globals": {
+        "_ProjectionParams": {
+          "o": 0,
+          "t": "vec4",
+          "v": [
+            1.0,
+            1.0,
+            1000.0,
+            0.0010000000474974513
+          ]
+        },
+        "_WorldSpaceCameraPos": {
+          "o": 1,
+          "t": "vec3",
+          "v": [
+            494.3238525390625,
+            360.0588684082031,
+            -278.7178955078125
+          ]
+        },
+        "hlslcc_mtx4x4unity_MatrixV": {
+          "o": 2,
+          "t": "vec4x4",
+          "v": [
+            [
+              0.7071067094802856,
+              -0.4545195698738098,
+              0.541675329208374,
+              0.0
+            ],
+            [
+              0.0,
+              0.7660444378852844,
+              0.6427876353263855,
+              0.0
+            ],
+            [
+              0.7071069478988647,
+              0.45451945066452026,
+              -0.5416750907897949,
+              0.0
+            ],
+            [
+              -152.4563446044922,
+              75.54147338867188,
+              -650.178955078125,
+              1.0
+            ]
+          ]
+        },
+        "hlslcc_mtx4x4unity_MatrixVP": {
+          "o": 6,
+          "t": "vec4x4",
+          "v": [
+            [
+              14.368474006652832,
+              -5.195182800292969,
+              -0.5427597761154175,
+              -0.541675329208374
+            ],
+            [
+              0.0,
+              8.755928039550781,
+              -0.6440744996070862,
+              -0.6427876353263855
+            ],
+            [
+              14.368478775024414,
+              5.195181369781494,
+              0.5427595376968384,
+              0.5416750907897949
+            ],
+            [
+              -3097.92724609375,
+              863.4430541992188,
+              649.4785766601562,
+              650.178955078125
+            ]
+          ]
+        },
+        "unity_BaseInstanceID": {
+          "o": 10,
+          "t": "float",
+          "v": 0.0
+        },
+        "unity_OrthoParams": {
+          "o": 11,
+          "t": "vec4",
+          "v": [
+            2.8125,
+            5.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "ps": {
+      "UnityPerDraw": {
+        "_shared_with": "cb.vs.UnityPerDraw",
+        "_note": "SHARED with VS UnityPerDraw (656 bytes) - see cb.vs.UnityPerDraw"
+      },
+      "UnityPerMaterial": {
+        "_shared_with": "cb.vs.UnityPerMaterial",
+        "_note": "SHARED with VS UnityPerMaterial (448 bytes) - see cb.vs.UnityPerMaterial"
+      },
+      "$Globals": {
+        "_BlurPlaneShadowOn": {
+          "o": 11,
+          "t": "float",
+          "v": 0.0
+        },
+        "_GlobalMipBias": {
+          "o": 12,
+          "t": "vec2",
+          "v": [
+            -0.5849624872207642,
+            0.6666666865348816
+          ]
+        },
+        "_MainLightColor": {
+          "o": 13,
+          "t": "vec4",
+          "v": [
+            1.2999664545059204,
+            1.299973964691162,
+            1.2999917268753052,
+            1.2999999523162842
+          ]
+        },
+        "_MainLightPosition": {
+          "o": 14,
+          "t": "vec4",
+          "v": [
+            -0.2632894814014435,
+            0.824126124382019,
+            -0.5014926195144653,
+            0.0
+          ]
+        },
+        "_WorldSpaceCameraPos": {
+          "o": 15,
+          "t": "vec3",
+          "v": [
+            494.3238525390625,
+            360.0588684082031,
+            -278.7178955078125
+          ]
+        }
+      }
+    }
+  },
+  "vtx_in": [
+    {
+      "name": "in_POSITION0",
+      "semantic": "in_POSITION0"
+    },
+    {
+      "name": "in_NORMAL0",
+      "semantic": "in_NORMAL0"
+    },
+    {
+      "name": "in_TEXCOORD0",
+      "semantic": "in_TEXCOORD0"
+    }
+  ],
+  "vtx_out": [
+    {
+      "name": "SV_POSITION",
+      "offset": 0,
+      "components": 4,
+      "role": "clip_space_builtin"
+    },
+    {
+      "name": "vs_TEXCOORD0",
+      "offset": 16,
+      "components": 4
+    },
+    {
+      "name": "vs_TEXCOORD1",
+      "offset": 32,
+      "components": 4
+    },
+    {
+      "name": "vs_TEXCOORD2",
+      "offset": 48,
+      "components": 4
+    },
+    {
+      "name": "vs_TEXCOORD3",
+      "offset": 64,
+      "components": 4
+    },
+    {
+      "name": "vs_TEXCOORD4",
+      "offset": 80,
+      "components": 1
+    },
+    {
+      "name": "vs_TEXCOORD5",
+      "offset": 96,
+      "components": 4
+    },
+    {
+      "name": "vs_TEXCOORD6",
+      "offset": 112,
+      "components": 4
+    },
+    {
+      "name": "vs_TEXCOORD7",
+      "offset": 128,
+      "components": 4
+    },
+    {
+      "name": "vs_TEXCOORD8",
+      "offset": 144,
+      "components": 3
+    }
+  ],
+  "postvs_stride": 144,
+  "postvs_num_indices": 600,
+  "export_suggestions": {},
+  "global_ctx": {
+    "dispatches": 0,
+    "shader_encoding": "GLSL",
+    "vs_source_length": 8231
+  },
+  "texture_metadata": [],
+  "errors": [],
+  "notes": [
+    "PS UnityPerDraw = VS UnityPerDraw (shared, 656B)",
+    "PS UnityPerMaterial = VS UnityPerMaterial (shared, 448B)",
+    "preliminary_sections auto-generated (OpenGL named uniforms)"
+  ],
+  "preliminary_sections": {
+    "section1": {
+      "api": "OpenGL",
+      "type": "Indexed Drawcall",
+      "shader_type_hint": "",
+      "indices": 600,
+      "instances": 6
+    },
+    "section3": {
+      "vs": {
+        "unity_Builtins0Array": {
+          "semantic_name": "unity_Builtins0Array",
+          "offset": 0,
+          "type": "struct_array",
+          "value": "<array of 128 struct>",
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_Builtins2Array": {
+          "semantic_name": "unity_Builtins2Array",
+          "offset": 0,
+          "type": "struct_array",
+          "value": "<array of 128 struct>",
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "hlslcc_mtx4x4unity_ObjectToWorld": {
+          "semantic_name": "hlslcc_mtx4x4unity_ObjectToWorld",
+          "offset": 0,
+          "type": "vec4x4",
+          "value": [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "hlslcc_mtx4x4unity_WorldToObject": {
+          "semantic_name": "hlslcc_mtx4x4unity_WorldToObject",
+          "offset": 64,
+          "type": "vec4x4",
+          "value": [
+            [
+              1.0,
+              -0.0,
+              0.0,
+              0.0
+            ],
+            [
+              -0.0,
+              1.0,
+              -0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0,
+              0.0
+            ],
+            [
+              -0.0,
+              -0.0,
+              -0.0,
+              1.0
+            ]
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_LODFade": {
+          "semantic_name": "unity_LODFade",
+          "offset": 128,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_WorldTransformParams": {
+          "semantic_name": "unity_WorldTransformParams",
+          "offset": 144,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_RenderingLayer": {
+          "semantic_name": "unity_RenderingLayer",
+          "offset": 160,
+          "type": "vec4",
+          "value": [
+            1.401298464324817e-45,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_LightData": {
+          "semantic_name": "unity_LightData",
+          "offset": 176,
+          "type": "vec4",
+          "value": [
+            20.0,
+            1.0,
+            1.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_LightIndices": {
+          "semantic_name": "unity_LightIndices",
+          "offset": 192,
+          "type": "vec4x2",
+          "value": "all [0.0, 0.0, 0.0, 0.0]",
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_ProbesOcclusion": {
+          "semantic_name": "unity_ProbesOcclusion",
+          "offset": 224,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube0_HDR": {
+          "semantic_name": "unity_SpecCube0_HDR",
+          "offset": 240,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube1_HDR": {
+          "semantic_name": "unity_SpecCube1_HDR",
+          "offset": 256,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube0_BoxMax": {
+          "semantic_name": "unity_SpecCube0_BoxMax",
+          "offset": 272,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube0_BoxMin": {
+          "semantic_name": "unity_SpecCube0_BoxMin",
+          "offset": 288,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube0_ProbePosition": {
+          "semantic_name": "unity_SpecCube0_ProbePosition",
+          "offset": 304,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube1_BoxMax": {
+          "semantic_name": "unity_SpecCube1_BoxMax",
+          "offset": 320,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube1_BoxMin": {
+          "semantic_name": "unity_SpecCube1_BoxMin",
+          "offset": 336,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SpecCube1_ProbePosition": {
+          "semantic_name": "unity_SpecCube1_ProbePosition",
+          "offset": 352,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_LightmapST": {
+          "semantic_name": "unity_LightmapST",
+          "offset": 368,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_DynamicLightmapST": {
+          "semantic_name": "unity_DynamicLightmapST",
+          "offset": 384,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SHAr": {
+          "semantic_name": "unity_SHAr",
+          "offset": 400,
+          "type": "vec4",
+          "value": [
+            0.0,
+            5.424022674560547e-06,
+            0.0,
+            0.9999691843986511
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SHAg": {
+          "semantic_name": "unity_SHAg",
+          "offset": 416,
+          "type": "vec4",
+          "value": [
+            0.0,
+            4.470348358154297e-06,
+            0.0,
+            0.9999756813049316
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SHAb": {
+          "semantic_name": "unity_SHAb",
+          "offset": 432,
+          "type": "vec4",
+          "value": [
+            0.0,
+            3.0100345611572266e-06,
+            0.0,
+            0.9999861121177673
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SHBr": {
+          "semantic_name": "unity_SHBr",
+          "offset": 448,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            -1.6540288925170898e-06,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SHBg": {
+          "semantic_name": "unity_SHBg",
+          "offset": 464,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            -1.385807991027832e-06,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SHBb": {
+          "semantic_name": "unity_SHBb",
+          "offset": 480,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            -9.611248970031738e-07,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_SHC": {
+          "semantic_name": "unity_SHC",
+          "offset": 496,
+          "type": "vec4",
+          "value": [
+            -1.5497207641601562e-06,
+            -1.2814998626708984e-06,
+            -8.717179298400879e-07,
+            1.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "hlslcc_mtx4x4unity_MatrixPreviousM": {
+          "semantic_name": "hlslcc_mtx4x4unity_MatrixPreviousM",
+          "offset": 512,
+          "type": "vec4x4",
+          "value": [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "hlslcc_mtx4x4unity_MatrixPreviousMI": {
+          "semantic_name": "hlslcc_mtx4x4unity_MatrixPreviousMI",
+          "offset": 576,
+          "type": "vec4x4",
+          "value": [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_MotionVectorsParams": {
+          "semantic_name": "unity_MotionVectorsParams",
+          "offset": 640,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_AlphaScale": {
+          "semantic_name": "_AlphaScale",
+          "offset": 0,
+          "type": "float",
+          "value": 0.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_SparkMap_ST": {
+          "semantic_name": "_SparkMap_ST",
+          "offset": 16,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_WorldEdge": {
+          "semantic_name": "_WorldEdge",
+          "offset": 32,
+          "type": "vec4",
+          "value": [
+            512.0,
+            512.0,
+            67.5,
+            122.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Control_ST": {
+          "semantic_name": "_Control_ST",
+          "offset": 48,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_BaseNormal_ST": {
+          "semantic_name": "_BaseNormal_ST",
+          "offset": 64,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_NormalMask_ST": {
+          "semantic_name": "_NormalMask_ST",
+          "offset": 80,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Control_TexelSize": {
+          "semantic_name": "_Control_TexelSize",
+          "offset": 96,
+          "type": "vec4",
+          "value": [
+            0.001953125,
+            0.001953125,
+            512.0,
+            512.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_SparkColor": {
+          "semantic_name": "_SparkColor",
+          "offset": 112,
+          "type": "vec4",
+          "value": [
+            1.0,
+            0.9078850746154785,
+            0.53733891248703,
+            1.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Golobal": {
+          "semantic_name": "_Color_Golobal",
+          "offset": 128,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Splat0_ST": {
+          "semantic_name": "_Splat0_ST",
+          "offset": 144,
+          "type": "vec4",
+          "value": [
+            25.0,
+            25.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Splat1_ST": {
+          "semantic_name": "_Splat1_ST",
+          "offset": 160,
+          "type": "vec4",
+          "value": [
+            30.0,
+            30.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Splat2_ST": {
+          "semantic_name": "_Splat2_ST",
+          "offset": 176,
+          "type": "vec4",
+          "value": [
+            40.0,
+            40.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Splat3_ST": {
+          "semantic_name": "_Splat3_ST",
+          "offset": 192,
+          "type": "vec4",
+          "value": [
+            30.0,
+            30.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Splat_Golobal_ST": {
+          "semantic_name": "_Splat_Golobal_ST",
+          "offset": 208,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat1": {
+          "semantic_name": "_Color_Splat1",
+          "offset": 224,
+          "type": "vec4",
+          "value": [
+            0.8796225786209106,
+            0.7529424428939819,
+            0.6307573318481445,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat2": {
+          "semantic_name": "_Color_Splat2",
+          "offset": 240,
+          "type": "vec4",
+          "value": [
+            0.7083760499954224,
+            0.7083760499954224,
+            0.7083760499954224,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat3": {
+          "semantic_name": "_Color_Splat3",
+          "offset": 256,
+          "type": "vec4",
+          "value": [
+            0.5028865933418274,
+            0.48514997959136963,
+            0.33716365694999695,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat4": {
+          "semantic_name": "_Color_Splat4",
+          "offset": 272,
+          "type": "vec4",
+          "value": [
+            0.7835380434989929,
+            0.7011021375656128,
+            0.4677838385105133,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_specColor": {
+          "semantic_name": "_specColor",
+          "offset": 288,
+          "type": "vec4",
+          "value": [
+            1.0,
+            0.8469852209091187,
+            0.35141828656196594,
+            1.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_MinHeight": {
+          "semantic_name": "_MinHeight",
+          "offset": 304,
+          "type": "float",
+          "value": 0.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_MaxHeight": {
+          "semantic_name": "_MaxHeight",
+          "offset": 308,
+          "type": "float",
+          "value": -5.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_HeightBlendScale": {
+          "semantic_name": "_HeightBlendScale",
+          "offset": 312,
+          "type": "float",
+          "value": 0.25,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Weight": {
+          "semantic_name": "_Weight",
+          "offset": 316,
+          "type": "float",
+          "value": 0.20000000298023224,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_NormalMinHeight": {
+          "semantic_name": "_NormalMinHeight",
+          "offset": 320,
+          "type": "float",
+          "value": 100.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_NormalMaxHeight": {
+          "semantic_name": "_NormalMaxHeight",
+          "offset": 324,
+          "type": "float",
+          "value": 200.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_BaseNormalScale": {
+          "semantic_name": "_BaseNormalScale",
+          "offset": 328,
+          "type": "float",
+          "value": 1.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat1_Intensity": {
+          "semantic_name": "_Color_Splat1_Intensity",
+          "offset": 332,
+          "type": "float",
+          "value": 1.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat2_Intensity": {
+          "semantic_name": "_Color_Splat2_Intensity",
+          "offset": 336,
+          "type": "float",
+          "value": 1.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat3_Intensity": {
+          "semantic_name": "_Color_Splat3_Intensity",
+          "offset": 340,
+          "type": "float",
+          "value": 1.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_Color_Splat4_Intensity": {
+          "semantic_name": "_Color_Splat4_Intensity",
+          "offset": 344,
+          "type": "float",
+          "value": 1.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_SparkColorIntensity": {
+          "semantic_name": "_SparkColorIntensity",
+          "offset": 348,
+          "type": "float",
+          "value": 0.05000000074505806,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_specScale": {
+          "semantic_name": "_specScale",
+          "offset": 352,
+          "type": "float",
+          "value": 0.05000000074505806,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_WorldUVON": {
+          "semantic_name": "_WorldUVON",
+          "offset": 356,
+          "type": "float",
+          "value": 1.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_HeightBlendOn": {
+          "semantic_name": "_HeightBlendOn",
+          "offset": 360,
+          "type": "float",
+          "value": 0.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_LightColorDesat": {
+          "semantic_name": "_LightColorDesat",
+          "offset": 364,
+          "type": "float",
+          "value": 1.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_BlurPlaneShadowColor": {
+          "semantic_name": "_BlurPlaneShadowColor",
+          "offset": 368,
+          "type": "vec4",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.5
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_FakeNormalOn": {
+          "semantic_name": "_FakeNormalOn",
+          "offset": 384,
+          "type": "float",
+          "value": 0.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_FakeNormalDir": {
+          "semantic_name": "_FakeNormalDir",
+          "offset": 400,
+          "type": "vec4",
+          "value": [
+            0.0010000000474974513,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_FakeNormalChannel": {
+          "semantic_name": "_FakeNormalChannel",
+          "offset": 416,
+          "type": "float",
+          "value": 0.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_FakeNormalScale": {
+          "semantic_name": "_FakeNormalScale",
+          "offset": 420,
+          "type": "float",
+          "value": 0.10000000149011612,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_EdgeColor01": {
+          "semantic_name": "_EdgeColor01",
+          "offset": 432,
+          "type": "vec3",
+          "value": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_ProjectionParams": {
+          "semantic_name": "_ProjectionParams",
+          "offset": 0,
+          "type": "vec4",
+          "value": [
+            1.0,
+            1.0,
+            1000.0,
+            0.0010000000474974513
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_WorldSpaceCameraPos": {
+          "semantic_name": "_WorldSpaceCameraPos",
+          "offset": 1,
+          "type": "vec3",
+          "value": [
+            494.3238525390625,
+            360.0588684082031,
+            -278.7178955078125
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "hlslcc_mtx4x4unity_MatrixV": {
+          "semantic_name": "hlslcc_mtx4x4unity_MatrixV",
+          "offset": 2,
+          "type": "vec4x4",
+          "value": [
+            [
+              0.7071067094802856,
+              -0.4545195698738098,
+              0.541675329208374,
+              0.0
+            ],
+            [
+              0.0,
+              0.7660444378852844,
+              0.6427876353263855,
+              0.0
+            ],
+            [
+              0.7071069478988647,
+              0.45451945066452026,
+              -0.5416750907897949,
+              0.0
+            ],
+            [
+              -152.4563446044922,
+              75.54147338867188,
+              -650.178955078125,
+              1.0
+            ]
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "hlslcc_mtx4x4unity_MatrixVP": {
+          "semantic_name": "hlslcc_mtx4x4unity_MatrixVP",
+          "offset": 6,
+          "type": "vec4x4",
+          "value": [
+            [
+              14.368474006652832,
+              -5.195182800292969,
+              -0.5427597761154175,
+              -0.541675329208374
+            ],
+            [
+              0.0,
+              8.755928039550781,
+              -0.6440744996070862,
+              -0.6427876353263855
+            ],
+            [
+              14.368478775024414,
+              5.195181369781494,
+              0.5427595376968384,
+              0.5416750907897949
+            ],
+            [
+              -3097.92724609375,
+              863.4430541992188,
+              649.4785766601562,
+              650.178955078125
+            ]
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_BaseInstanceID": {
+          "semantic_name": "unity_BaseInstanceID",
+          "offset": 10,
+          "type": "float",
+          "value": 0.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "unity_OrthoParams": {
+          "semantic_name": "unity_OrthoParams",
+          "offset": 11,
+          "type": "vec4",
+          "value": [
+            2.8125,
+            5.0,
+            0.0,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        }
+      },
+      "ps": {
+        "_BlurPlaneShadowOn": {
+          "semantic_name": "_BlurPlaneShadowOn",
+          "offset": 11,
+          "type": "float",
+          "value": 0.0,
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_GlobalMipBias": {
+          "semantic_name": "_GlobalMipBias",
+          "offset": 12,
+          "type": "vec2",
+          "value": [
+            -0.5849624872207642,
+            0.6666666865348816
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_MainLightColor": {
+          "semantic_name": "_MainLightColor",
+          "offset": 13,
+          "type": "vec4",
+          "value": [
+            1.2999664545059204,
+            1.299973964691162,
+            1.2999917268753052,
+            1.2999999523162842
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_MainLightPosition": {
+          "semantic_name": "_MainLightPosition",
+          "offset": 14,
+          "type": "vec4",
+          "value": [
+            -0.2632894814014435,
+            0.824126124382019,
+            -0.5014926195144653,
+            0.0
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        },
+        "_WorldSpaceCameraPos": {
+          "semantic_name": "_WorldSpaceCameraPos",
+          "offset": 15,
+          "type": "vec3",
+          "value": [
+            494.3238525390625,
+            360.0588684082031,
+            -278.7178955078125
+          ],
+          "confidence": "HIGH",
+          "basis": "named",
+          "likely_unused": false
+        }
+      }
+    },
+    "section4": {
+      "vs": [],
+      "ps": [
+        {
+          "slot": 0,
+          "rid": "ResourceId::4311",
+          "name": "_Splat_Golobal",
+          "dims": "4x4",
+          "fmt": "R8G8B8A8_UNORM"
+        },
+        {
+          "slot": 1,
+          "rid": "ResourceId::5681",
+          "name": "Texture 5681",
+          "dims": "512x512",
+          "fmt": "R8G8B8A8_UNORM"
+        },
+        {
+          "slot": 2,
+          "rid": "ResourceId::4312",
+          "name": "Texture 4312",
+          "dims": "4x4",
+          "fmt": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 3,
+          "rid": "ResourceId::4322",
+          "name": "Texture 4322",
+          "dims": "16x16",
+          "fmt": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 4,
+          "rid": "ResourceId::4312",
+          "name": "Texture 4312",
+          "dims": "4x4",
+          "fmt": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 5,
+          "rid": "ResourceId::5627",
+          "name": "Texture 5627",
+          "dims": "512x512",
+          "fmt": "R8G8B8A8_UNORM"
+        },
+        {
+          "slot": 6,
+          "rid": "ResourceId::5620",
+          "name": "Texture 5620",
+          "dims": "256x256",
+          "fmt": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 7,
+          "rid": "ResourceId::5618",
+          "name": "Texture 5618",
+          "dims": "256x256",
+          "fmt": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 8,
+          "rid": "ResourceId::5619",
+          "name": "Texture 5619",
+          "dims": "256x256",
+          "fmt": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 9,
+          "rid": "ResourceId::5626",
+          "name": "Texture 5626",
+          "dims": "256x256",
+          "fmt": "R8G8B8A8_SRGB"
+        },
+        {
+          "slot": 10,
+          "rid": "ResourceId::4316",
+          "name": "Texture 4316",
+          "dims": "4x4",
+          "fmt": "R8G8B8A8_SRGB"
+        }
+      ]
+    }
+  }
+}

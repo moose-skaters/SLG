@@ -1,0 +1,45 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Visual Studio / Rider generated files
+.vs/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity generated metadata
+sysinfo.txt
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Reconstruction exports that are not needed in the repository
+/Reconstruction/**/*.json
+
+# Build and packaging outputs
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.exe
+*.zip

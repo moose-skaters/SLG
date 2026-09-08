@@ -1,0 +1,16 @@
+var data=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("D:/Last-Z/Assets/LastZ/GLSL/raw_data.json"));
+var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>("Assets/RdocMeshes/eid_466/eid_466.mat");
+foreach(var property in ((Newtonsoft.Json.Linq.JObject)data["cb"]["vs"]["UnityPerMaterial"]).Properties()) {
+ string name=property.Name; var v=property.Value["v"];
+ if(name.EndsWith("_ST")) {
+  string texName=name.Substring(0,name.Length-3);
+  if(mat.HasProperty(texName)) {var a=v.ToObject<float[]>();mat.SetTextureScale(texName,new UnityEngine.Vector2(a[0],a[1]));mat.SetTextureOffset(texName,new UnityEngine.Vector2(a[2],a[3]));}
+ } else if(mat.HasProperty(name)) {
+  if(v is Newtonsoft.Json.Linq.JArray){var a=v.ToObject<float[]>();mat.SetVector(name,new UnityEngine.Vector4(a[0],a[1],a[2],a.Length>3?a[3]:0));}
+  else mat.SetFloat(name,(float)v);
+ }
+}
+
+mat.SetFloat("_TextureMipBias",-0.584962487f);mat.SetFloat("_BlurPlaneShadowOn",0);mat.SetFloat("_FlipScreenMaskY",0);
+UnityEditor.EditorUtility.SetDirty(mat);UnityEditor.AssetDatabase.SaveAssets();
+var shader=mat.shader;return new { name=shader.name,supported=shader.isSupported,messages=UnityEditor.ShaderUtil.GetShaderMessages(shader)};

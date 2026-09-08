@@ -1,0 +1,24 @@
+{
+  "bindings": [
+    {
+      "property_name": "_BaseMap",
+      "filename": "Texture_6887.tga",
+      "resource_id": "ResourceId::6887"
+    },
+    {
+      "property_name": "_EmissionMap",
+      "filename": "Texture_4313.tga",
+      "resource_id": "ResourceId::4313"
+    },
+    {
+      "property_name": "_MGA",
+      "filename": "Texture_6885.tga",
+      "resource_id": "ResourceId::6885"
+    },
+    {
+      "property_name": "_ReflectionMap",
+      "filename": "Texture_6911.tga",
+      "resource_id": "ResourceId::6911"
+    }
+  ]
+}

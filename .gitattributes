@@ -1,0 +1,12 @@
+# Store large binary assets in Git LFS
+Assets/**/*.png filter=lfs diff=lfs merge=lfs -text
+Assets/**/*.tga filter=lfs diff=lfs merge=lfs -text
+Assets/**/*.asset filter=lfs diff=lfs merge=lfs -text
+Assets/**/*.rgba filter=lfs diff=lfs merge=lfs -text
+Assets/**/*.bin filter=lfs diff=lfs merge=lfs -text
+Assets/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+Reconstruction/**/*.png filter=lfs diff=lfs merge=lfs -text
+Reconstruction/**/*.tga filter=lfs diff=lfs merge=lfs -text
+Reconstruction/**/*.rgba filter=lfs diff=lfs merge=lfs -text
+Reconstruction/**/*.bin filter=lfs diff=lfs merge=lfs -text
+Reconstruction/**/*.fbx filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,103 @@
+string baseDir="D:/Last-Z/Reconstruction/Validation/CsvTexCoordUpgrade";
+string assetDir="Assets/__RdocTexCoordUpgradeCheck";
+var type=System.AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("RdocImporter.RdocImporterWindow")).First(t=>t!=null);
+var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+var statics=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static;
+var window=UnityEngine.ScriptableObject.CreateInstance(type);window.hideFlags=UnityEngine.HideFlags.HideAndDontSave;
+var failures=new System.Collections.Generic.List<string>();int edgeCases=0,legacy=0,fbxCases=0;
+var preview=UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
+System.Func<string,object,UnityEngine.Mesh> build=(path,map)=>{
+ var data=type.GetMethod("ParseCsv",statics).Invoke(null,new object[]{path,map});
+ return (UnityEngine.Mesh)type.GetMethod("BuildMesh",statics).Invoke(null,new[]{data});
+};
+try{
+ type.GetField("_csvDir",flags).SetValue(window,baseDir+"/EdgeCases");
+ type.GetMethod("ScanHeaders",flags).Invoke(window,null);
+ var map=type.GetMethod("GetColumnMap",flags).Invoke(window,null);
+ foreach(var file in System.IO.Directory.GetFiles(baseDir+"/EdgeCases","*_verts.csv",System.IO.SearchOption.AllDirectories)){
+   bool invalid=file.Contains("eid_invalid");UnityEngine.Mesh mesh=null;
+   try{
+     mesh=build(file,map);
+     if(invalid){failures.Add("Missing component was silently accepted.");continue;}
+     string[] hdr=System.IO.File.ReadLines(file).First().Split(',');
+     for(int c=0;c<8;c++){
+       var attr=(UnityEngine.Rendering.VertexAttribute)((int)UnityEngine.Rendering.VertexAttribute.TexCoord0+c);
+       int dim=hdr.Count(h=>h.StartsWith("in_TEXCOORD"+c+"."));
+       if(mesh.GetVertexAttributeDimension(attr)!=dim)failures.Add(file+": wrong dimension for UV"+c);
+     }
+     var native=(UnityEngine.Mesh)type.GetMethod("SaveFullMeshIfNeeded",statics).Invoke(null,new object[]{assetDir+"/"+System.IO.Path.GetFileNameWithoutExtension(file)+".fbx",mesh});
+     if(native!=null){
+       UnityEditor.AssetDatabase.SaveAssets();string path=UnityEditor.AssetDatabase.GetAssetPath(native);UnityEngine.Resources.UnloadAsset(native);
+       var loaded=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(path);
+       for(int c=0;c<8;c++){
+         var attr=(UnityEngine.Rendering.VertexAttribute)((int)UnityEngine.Rendering.VertexAttribute.TexCoord0+c);
+         if(loaded.GetVertexAttributeDimension(attr)!=mesh.GetVertexAttributeDimension(attr))failures.Add(file+": dimension changed after asset reload");
+       }
+     }
+     edgeCases++;
+   }catch(System.Reflection.TargetInvocationException ex){if(!invalid)failures.Add(file+": "+ex.InnerException.Message);else edgeCases++;}
+   finally{if(mesh!=null)UnityEngine.Object.DestroyImmediate(mesh);}
+ }
+ // Re-export with a smaller layout must update the existing asset without changing its GUID.
+ var full=build(baseDir+"/EdgeCases/eid_all/eid_all_verts.csv",map);
+ var small=build(baseDir+"/EdgeCases/eid_uv2/eid_uv2_verts.csv",map);
+ try{
+   string fbx=assetDir+"/changing.fbx";
+   var saved=(UnityEngine.Mesh)type.GetMethod("SaveFullMeshIfNeeded",statics).Invoke(null,new object[]{fbx,full});
+   string path=UnityEditor.AssetDatabase.GetAssetPath(saved),guid=UnityEditor.AssetDatabase.AssetPathToGUID(path);
+   saved=(UnityEngine.Mesh)type.GetMethod("SaveFullMeshIfNeeded",statics).Invoke(null,new object[]{fbx,small});
+   if(UnityEditor.AssetDatabase.AssetPathToGUID(path)!=guid || saved.vertexAttributeCount!=small.vertexAttributeCount)failures.Add("Re-export did not replace removed channels safely.");
+ }finally{UnityEngine.Object.DestroyImmediate(full);UnityEngine.Object.DestroyImmediate(small);}
+ // Original 84-file batch remains compatible.
+ type.GetField("_csvDir",flags).SetValue(window,"D:/Last-Z/Assets/LastZ/CSV/Frame414");
+ type.GetMethod("ScanHeaders",flags).Invoke(window,null);map=type.GetMethod("GetColumnMap",flags).Invoke(window,null);
+ foreach(var file in System.IO.Directory.GetFiles("D:/Last-Z/Assets/LastZ/CSV/Frame414","*_verts.csv",System.IO.SearchOption.AllDirectories)){
+   var mesh=build(file,map);
+   try{
+     string[] hdr=System.IO.File.ReadLines(file).First().Split(',').Select(s=>s.Trim()).ToArray();
+     for(int c=0;c<8;c++){
+       var attr=(UnityEngine.Rendering.VertexAttribute)((int)UnityEngine.Rendering.VertexAttribute.TexCoord0+c);
+       int dim=hdr.Count(h=>h.StartsWith("in_TEXCOORD"+c+"."));
+       if(mesh.GetVertexAttributeDimension(attr)!=dim)failures.Add(file+": legacy UV mismatch");
+     }
+     if(mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal)!=hdr.Contains("in_NORMAL0.x"))failures.Add(file+": normal presence changed");
+     if(mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Tangent)!=hdr.Contains("in_TANGENT0.x"))failures.Add(file+": tangent presence changed");
+     if((bool)type.GetMethod("RequiresFullMesh",statics).Invoke(null,new object[]{mesh}))failures.Add(file+": unnecessary extra asset for legacy layout");
+     legacy++;
+   }finally{UnityEngine.Object.DestroyImmediate(mesh);}
+ }
+ // Check the actual FBX route and native-mesh selection.
+ type.GetField("_csvDir",flags).SetValue(window,baseDir+"/Fixtures");type.GetMethod("ScanHeaders",flags).Invoke(window,null);
+ map=type.GetMethod("GetColumnMap",flags).Invoke(window,null);
+ foreach(int eid in new[]{3081,3128,3176}){
+   string file=baseDir+"/Fixtures/eid_"+eid+"/eid_"+eid+"_verts.csv";
+   var mesh=build(file,map);var go=new UnityEngine.GameObject("UVCheck_"+eid);
+   UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go,preview);
+   UnityEngine.GameObject instance=null;
+   try{
+     go.AddComponent<UnityEngine.MeshFilter>().sharedMesh=mesh;go.AddComponent<UnityEngine.MeshRenderer>();
+     string fbx=assetDir+"/roundtrip_"+eid+".fbx";
+     UnityEditor.Formats.Fbx.Exporter.ModelExporter.ExportObject(fbx,go);
+     UnityEditor.AssetDatabase.ImportAsset(fbx);
+     var importer=UnityEditor.AssetImporter.GetAtPath(fbx);string settingsBefore=UnityEditor.EditorJsonUtility.ToJson(importer);
+     var fullAsset=(UnityEngine.Mesh)type.GetMethod("SaveFullMeshIfNeeded",statics).Invoke(null,new object[]{fbx,mesh});
+     UnityEditor.AssetDatabase.SaveAssets();
+     var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(fbx);
+     instance=UnityEngine.Object.Instantiate(prefab);UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance,preview);
+     type.GetMethod("ApplyFullMesh",statics).Invoke(null,new object[]{instance,fullAsset});
+     var selected=instance.GetComponentInChildren<UnityEngine.MeshFilter>().sharedMesh;
+     for(int c=0;c<8;c++){
+       var attr=(UnityEngine.Rendering.VertexAttribute)((int)UnityEngine.Rendering.VertexAttribute.TexCoord0+c);
+       if(selected.GetVertexAttributeDimension(attr)!=mesh.GetVertexAttributeDimension(attr))failures.Add(eid+": final scene UV dimension mismatch");
+       if(!mesh.HasVertexAttribute(attr))continue;
+       var uv=new System.Collections.Generic.List<UnityEngine.Vector4>();selected.GetUVs(c,uv);
+       var original=new System.Collections.Generic.List<UnityEngine.Vector4>();mesh.GetUVs(c,original);
+       // Native route must keep vertex order and all component values exactly.
+       if(fullAsset!=null&&!uv.SequenceEqual(original))failures.Add(eid+": native UV values changed");
+     }
+     if(settingsBefore!=UnityEditor.EditorJsonUtility.ToJson(importer))failures.Add(eid+": FBX import settings were changed");
+     fbxCases++;
+   }finally{if(instance!=null)UnityEngine.Object.DestroyImmediate(instance);UnityEngine.Object.DestroyImmediate(go);UnityEngine.Object.DestroyImmediate(mesh);}
+ }
+ return Newtonsoft.Json.JsonConvert.SerializeObject(new{edgeCases,legacy,fbxCases,failures,passed=failures.Count==0},Newtonsoft.Json.Formatting.Indented);
+}finally{UnityEngine.Object.DestroyImmediate(window);UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(preview);}

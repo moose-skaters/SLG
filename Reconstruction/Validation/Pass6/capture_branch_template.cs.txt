@@ -1,0 +1,8 @@
+var root="D:/Last-Z/Reconstruction/Validation/Pass6/";var config=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText(root+"SUITE.json"));var programs=config["programs"].ToObject<int[]>();var source=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source.json"));var materials=source.Where(r=>programs.Contains((int)r["program"])).Select(r=>UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>("Assets/RdocMeshes/eid_"+(int)r["eid"]+"/eid_"+(int)r["eid"]+".mat")).ToArray();var originals=materials.Select(m=>new UnityEngine.Material(m)).ToArray();
+try{
+ foreach(var mat in materials)foreach(var p in ((Newtonsoft.Json.Linq.JObject)config["values"]).Properties()){
+  if(!mat.HasProperty(p.Name))continue;if(p.Value is Newtonsoft.Json.Linq.JArray){var a=p.Value.ToObject<float[]>();mat.SetVector(p.Name,new UnityEngine.Vector4(a[0],a[1],a[2],a[3]));}else mat.SetFloat(p.Name,(float)p.Value);
+ }
+BODY
+}finally{for(int i=0;i<materials.Length;i++){materials[i].CopyPropertiesFromMaterial(originals[i]);UnityEngine.Object.DestroyImmediate(originals[i]);}}
+return "SUITE rendered and original parameters restored.";

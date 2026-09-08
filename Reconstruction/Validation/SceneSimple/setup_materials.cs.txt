@@ -1,0 +1,38 @@
+var source=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText("D:/Last-Z/Reconstruction/Validation/SceneSimple/source_materials.json"));
+var shader=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Shader>("Assets/LastZ/Shader/SceneSimple.shader");
+if(shader==null||!shader.isSupported||UnityEditor.ShaderUtil.GetShaderMessages(shader).Any(x=>x.severity.ToString()=="Error"))return "Shader is not ready";
+if(!UnityEditor.AssetDatabase.IsValidFolder("Assets/LastZ/Shader/SceneSimpleTextures"))UnityEditor.AssetDatabase.CreateFolder("Assets/LastZ/Shader","SceneSimpleTextures");
+var mipData=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("D:/Last-Z/Reconstruction/Validation/SceneSimple/raw_30713.json"));
+var mips=(Newtonsoft.Json.Linq.JArray)mipData["mips"];var stream=new System.IO.MemoryStream();
+foreach(var mip in mips){var bytes=System.Convert.FromBase64String((string)mip["data"]);stream.Write(bytes,0,bytes.Length);}
+var originalMips=new UnityEngine.Texture2D((int)mips[0]["width"],(int)mips[0]["height"],UnityEngine.TextureFormat.RGBA32,mips.Count,false);
+originalMips.name="SceneSimple_30713_OriginalMips";originalMips.LoadRawTextureData(stream.ToArray());originalMips.Apply(false,true);originalMips.wrapMode=UnityEngine.TextureWrapMode.Repeat;originalMips.filterMode=UnityEngine.FilterMode.Bilinear;originalMips.anisoLevel=0;
+string mipPath="Assets/LastZ/Shader/SceneSimpleTextures/Texture_30713.asset";
+var existing=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>(mipPath);
+if(existing==null)UnityEditor.AssetDatabase.CreateAsset(originalMips,mipPath);else{UnityEditor.EditorUtility.CopySerialized(originalMips,existing);UnityEngine.Object.DestroyImmediate(originalMips);originalMips=existing;UnityEditor.EditorUtility.SetDirty(existing);}
+var renderers=UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.MeshRenderer>().Where(r=>r.gameObject.scene.IsValid()).ToArray();
+var report=new System.Collections.Generic.List<object>();int order=0;
+foreach(var row in source){
+ int eid=(int)row["eid"];string matPath="Assets/RdocMeshes/eid_"+eid+"/eid_"+eid+".mat";
+ var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>(matPath);UnityEditor.Undo.RecordObject(mat,"Restore SceneSimple material");mat.shader=shader;mat.shaderKeywords=new string[0];
+ foreach(var b in row["bindings"]){
+  string property=(string)b["property_name"];string path="Assets/LastZ/CSV/Frame414/eid_"+eid+"/"+(string)b["filename"];
+  if((string)b["resource_id"]=="ResourceId::30713"){mat.SetTexture(property,originalMips);continue;}
+  var importer=UnityEditor.AssetImporter.GetAtPath(path) as UnityEditor.TextureImporter;
+  importer.textureType=UnityEditor.TextureImporterType.Default;importer.sRGBTexture=true;importer.textureCompression=UnityEditor.TextureImporterCompression.Uncompressed;importer.crunchedCompression=false;
+  importer.alphaIsTransparency=false;importer.mipmapEnabled=false;importer.npotScale=UnityEditor.TextureImporterNPOTScale.None;importer.wrapMode=UnityEngine.TextureWrapMode.Repeat;importer.filterMode=UnityEngine.FilterMode.Bilinear;importer.anisoLevel=0;importer.SaveAndReimport();
+  mat.SetTexture(property,UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>(path));
+ }
+ var color=row["color"].ToObject<float[]>();mat.SetVector("_Color",new UnityEngine.Vector4(color[0],color[1],color[2],color[3]));
+ mat.SetFloat("_VertexOffsetY",(float)row["vertexOffsetY"]);mat.SetFloat("_AlphaIsR",(float)row["alphaIsR"]);mat.SetFloat("_BlurPlaneShadowOn",0);
+ bool blend=(bool)row["blend"];mat.SetFloat("_SrcBlend",blend?5:1);mat.SetFloat("_DstBlend",blend?10:0);mat.SetFloat("_SrcBlendAlpha",blend?5:1);mat.SetFloat("_DstBlendAlpha",blend?10:0);mat.SetFloat("_ZWrite",(bool)row["zwrite"]?1:0);
+ mat.SetOverrideTag("RenderType",blend?"Transparent":"Opaque");
+ // A per-material queue preserves the interleaved original draw order within this reconstructed group.
+ mat.renderQueue=3000+order++;mat.enableInstancing=false;UnityEditor.EditorUtility.SetDirty(mat);
+ var matches=renderers.Where(r=>r.name.StartsWith("EID_"+eid+"_")).ToArray();
+ foreach(var r in matches){UnityEditor.Undo.RecordObject(r,"Assign SceneSimple material");UnityEditor.Undo.RecordObject(r.gameObject,"Show restored SceneSimple object");r.sharedMaterial=mat;r.gameObject.SetActive(true);r.enabled=true;}
+ report.Add(new{eid,material=matPath,shader=mat.shader.name,queue=mat.renderQueue,blend,zwrite=(bool)row["zwrite"],assigned=matches.Length});
+}
+UnityEditor.AssetDatabase.SaveAssets();UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+System.IO.File.WriteAllText("D:/Last-Z/Reconstruction/Validation/SceneSimple/material_setup.json",Newtonsoft.Json.JsonConvert.SerializeObject(report,Newtonsoft.Json.Formatting.Indented));
+return new{materials=report,shaderMessages=UnityEditor.ShaderUtil.GetShaderMessages(shader)};

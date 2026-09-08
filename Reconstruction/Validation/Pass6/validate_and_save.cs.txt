@@ -1,0 +1,27 @@
+var root="D:/Last-Z/Reconstruction/Validation/Pass6/";
+var source=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source.json"));
+var all=UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.MeshRenderer>().Where(r=>r.gameObject.scene.IsValid()).ToArray();
+var failures=new System.Collections.Generic.List<string>();var report=new System.Collections.Generic.List<object>();
+foreach(var row in source){
+ int eid=(int)row["eid"];var matches=all.Where(r=>r.name=="EID_"+eid+"_inst0").ToArray();
+ if(matches.Length!=1){failures.Add(eid+":object count "+matches.Length);continue;}
+ var renderer=matches[0];var mat=renderer.sharedMaterial;var mesh=renderer.GetComponent<UnityEngine.MeshFilter>().sharedMesh;string family=(string)row["family"];
+ if(mat.shader.name!="LastZ/"+family)failures.Add(eid+":shader");
+ if(!renderer.gameObject.activeInHierarchy||!renderer.enabled)failures.Add(eid+":inactive");
+ if(mat.renderQueue!=(int)row["queue"])failures.Add(eid+":queue");
+ foreach(var b in row["bindings"]){if(b["assetKey"]==null)continue;string prop=(string)b["property_name"];if(!mat.HasProperty(prop)){failures.Add(eid+":missing texture property "+prop);continue;}string expected="Assets/LastZ/Shader/Pass6Textures/Texture_"+(string)b["assetKey"]+".asset";if(UnityEditor.AssetDatabase.GetAssetPath(mat.GetTexture(prop))!=expected)failures.Add(eid+":texture "+prop);}
+ foreach(var section in new[]{"params","globals"})foreach(var p in ((Newtonsoft.Json.Linq.JObject)row[section]).Properties()){
+  string key=p.Name;var a=p.Value.ToObject<float[]>();if(a.Length==0)continue;
+  if(key.EndsWith("_ST")&&!mat.HasProperty(key)){string tp=key.Substring(0,key.Length-3);if(!mat.HasProperty(tp))continue;var s=mat.GetTextureScale(tp);var o=mat.GetTextureOffset(tp);if(UnityEngine.Mathf.Max(UnityEngine.Mathf.Abs(s.x-a[0]),UnityEngine.Mathf.Abs(s.y-a[1]),UnityEngine.Mathf.Abs(o.x-a[2]),UnityEngine.Mathf.Abs(o.y-a[3]))>1e-5)failures.Add(eid+":ST "+key);}
+  else if(mat.HasProperty(key)&&key!="_ZTest"){if(a.Length==1){if(UnityEngine.Mathf.Abs(mat.GetFloat(key)-a[0])>1e-5)failures.Add(eid+":float "+key);}else{var v=mat.GetVector(key);for(int j=0;j<a.Length&&j<4;j++)if(UnityEngine.Mathf.Abs(v[j]-a[j])>1e-5)failures.Add(eid+":vector "+key);}}
+ }
+ var m=row["matrix"].ToObject<float[]>();float err=0;for(int i=0;i<16;i++)err=UnityEngine.Mathf.Max(err,UnityEngine.Mathf.Abs(renderer.localToWorldMatrix[i]-m[i]));
+ if(mesh.vertexCount!=(int)row["vertexCount"]||mesh.GetIndexCount(0)!=(int)row["indexCount"])failures.Add(eid+":geometry count");
+ report.Add(new{eid,family,active=renderer.gameObject.activeInHierarchy,queue=mat.renderQueue,matrixMaxError=err,vertexCount=mesh.vertexCount,indexCount=mesh.GetIndexCount(0),material=UnityEditor.AssetDatabase.GetAssetPath(mat),mesh=UnityEditor.AssetDatabase.GetAssetPath(mesh)});
+ UnityEditor.EditorUtility.SetDirty(mat);
+}
+var shaders=new[]{"Ground","SceneLit","SceneTint","GeneralVFX","ParticleVFX","FlowFire","FogOfWar","FogDepthSnapshot"}.Select(n=>{var s=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Shader>("Assets/LastZ/Shader/"+n+".shader");return new{name=n,supported=s.isSupported,messages=UnityEditor.ShaderUtil.GetShaderMessages(s)};}).ToArray();
+UnityEditor.AssetDatabase.SaveAssets();var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();bool saved=UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);var camera=UnityEngine.GameObject.Find("RdocCamera").GetComponent<UnityEngine.Camera>();
+var rd=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.Universal.UniversalRendererData>("Assets/Settings/URP-HighFidelity-Renderer.asset");
+var result=new{saved,scene=scene.path,expected=source.Count,assigned=report.Count,failures,objects=report,shaders,features=rd.rendererFeatures.Select(f=>new{f.name,active=f.isActive}).ToArray(),cameraPosition=camera.transform.position.ToString("F6"),cameraBackground=UnityEngine.ColorUtility.ToHtmlStringRGBA(camera.backgroundColor)};
+System.IO.File.WriteAllText(root+"final_audit.json",Newtonsoft.Json.JsonConvert.SerializeObject(result,Newtonsoft.Json.Formatting.Indented));return new{saved,assigned=report.Count,failures,shaders};

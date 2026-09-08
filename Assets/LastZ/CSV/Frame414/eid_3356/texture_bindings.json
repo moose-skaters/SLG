@@ -1,0 +1,19 @@
+{
+  "bindings": [
+    {
+      "property_name": "_CameraDepthTexture",
+      "filename": "_CameraDepthTexture__Texture_30002.tga",
+      "resource_id": "ResourceId::30002"
+    },
+    {
+      "property_name": "_FogMask",
+      "filename": "_FogMask__Texture_30516.tga",
+      "resource_id": "ResourceId::30516"
+    },
+    {
+      "property_name": "_FogOfWar",
+      "filename": "_FogOfWar__Texture_29993.tga",
+      "resource_id": "ResourceId::29993"
+    }
+  ]
+}

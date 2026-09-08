@@ -1,0 +1,49 @@
+{
+  "bindings": [
+    {
+      "property_name": "_BaseNormal",
+      "filename": "_BaseNormal__Texture_4311.tga",
+      "resource_id": "ResourceId::4311"
+    },
+    {
+      "property_name": "_Control",
+      "filename": "_Control__Texture_30635.tga",
+      "resource_id": "ResourceId::30635"
+    },
+    {
+      "property_name": "_NormalMask",
+      "filename": "_NormalMask__Texture_4312.tga",
+      "resource_id": "ResourceId::4312"
+    },
+    {
+      "property_name": "_PlaneBlurShadowMap",
+      "filename": "_PlaneBlurShadowMap__Texture_4322.tga",
+      "resource_id": "ResourceId::4322"
+    },
+    {
+      "property_name": "_Splat0",
+      "filename": "_Splat0__Texture_30633.tga",
+      "resource_id": "ResourceId::30633"
+    },
+    {
+      "property_name": "_Splat1",
+      "filename": "_Splat1__Texture_30634.tga",
+      "resource_id": "ResourceId::30634"
+    },
+    {
+      "property_name": "_Splat2",
+      "filename": "_Splat2__Texture_30634.tga",
+      "resource_id": "ResourceId::30634"
+    },
+    {
+      "property_name": "_Splat3",
+      "filename": "_Splat3__Texture_30634.tga",
+      "resource_id": "ResourceId::30634"
+    },
+    {
+      "property_name": "_Splat_Golobal",
+      "filename": "_Splat_Golobal__Texture_4316.tga",
+      "resource_id": "ResourceId::4316"
+    }
+  ]
+}

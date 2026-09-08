@@ -1,0 +1,27 @@
+var camera=UnityEngine.GameObject.Find("RdocCamera").GetComponent<UnityEngine.Camera>();
+var renderers=UnityEngine.Object.FindObjectsOfType<UnityEngine.Renderer>();
+var enabled=renderers.Select(r=>r.enabled).ToArray();
+var target=camera.targetTexture;var rect=camera.rect;var aspect=camera.aspect;var projection=camera.projectionMatrix;
+var background=camera.backgroundColor;var clear=camera.clearFlags;var active=UnityEngine.RenderTexture.active;
+var extra=camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+bool post=extra.renderPostProcessing;bool hdr=camera.allowHDR;bool msaa=camera.allowMSAA;
+var rt=new UnityEngine.RenderTexture(720,1280,24,UnityEngine.RenderTextureFormat.ARGB32,UnityEngine.RenderTextureReadWrite.sRGB);
+rt.antiAliasing=1;rt.Create();
+var tex=new UnityEngine.Texture2D(720,1280,UnityEngine.TextureFormat.RGBA32,false,false);
+try {
+ for(int i=0;i<renderers.Length;i++) renderers[i].enabled=enabled[i]&&renderers[i].name.StartsWith("EID_466_");
+ camera.targetTexture=rt;camera.rect=new UnityEngine.Rect(0,0,1,1);camera.aspect=720f/1280;
+ camera.clearFlags=UnityEngine.CameraClearFlags.SolidColor;camera.backgroundColor=UnityEngine.Color.black;
+ camera.allowHDR=false;camera.allowMSAA=false;extra.renderPostProcessing=false;
+ camera.Render();
+ UnityEngine.RenderTexture.active=rt;
+ tex.ReadPixels(new UnityEngine.Rect(0,0,720,1280),0,0);tex.Apply();
+ var pixels=tex.GetPixels32();for(int i=0;i<pixels.Length;i++) pixels[i].a=255;tex.SetPixels32(pixels);tex.Apply();
+ System.IO.File.WriteAllBytes("D:/Last-Z/Reconstruction/Validation/EID466/unity_eid466.png",tex.EncodeToPNG());
+} finally {
+ for(int i=0;i<renderers.Length;i++) renderers[i].enabled=enabled[i];
+ camera.targetTexture=target;camera.rect=rect;camera.aspect=aspect;camera.projectionMatrix=projection;
+ camera.backgroundColor=background;camera.clearFlags=clear;camera.allowHDR=hdr;camera.allowMSAA=msaa;extra.renderPostProcessing=post;
+ UnityEngine.RenderTexture.active=active;rt.Release();UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(tex);
+}
+return "Saved EID466-only 720x1280 image; camera and renderers restored.";

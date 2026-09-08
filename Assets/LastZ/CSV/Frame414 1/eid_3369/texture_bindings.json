@@ -1,0 +1,24 @@
+{
+  "bindings": [
+    {
+      "property_name": "_BlendNoise",
+      "filename": "_BlendNoise__Texture_5289.tga",
+      "resource_id": "ResourceId::5289"
+    },
+    {
+      "property_name": "_FogMask",
+      "filename": "_FogMask__Texture_30516.tga",
+      "resource_id": "ResourceId::30516"
+    },
+    {
+      "property_name": "_FogOfWar",
+      "filename": "_FogOfWar__Texture_29993.tga",
+      "resource_id": "ResourceId::29993"
+    },
+    {
+      "property_name": "_MainTex",
+      "filename": "_MainTex__Texture_5291.tga",
+      "resource_id": "ResourceId::5291"
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+#version 450
+uniform vec4 _Time;
+uniform vec4 _Params;
+uniform float _Timeline;
+layout(std140, binding = 0) uniform UnityPerMaterial{
+  vec4 _EdgeNoiseFlowDir;
+  vec4 _ShadeOffset;
+  vec4 _EdgeClamp;
+  vec4 _MainTex_ST;
+  vec4 _BlendNoise_ST;
+  vec4 _EdgeNoise_ST;
+  vec4 _EdgeNoise2_ST;
+  vec4 _FogShadowOffset;
+  vec4 _FogSpeed;
+  vec4 _FogNightShadowColor;
+  vec4 _Color;
+  vec4 _TopColor;
+  vec4 _NightEdgeColor;
+  vec4 _NightTopColor;
+  vec4 _NightColor;
+  vec4 _EdgeColor;
+  vec4 _EdgeSpeed;
+  vec4 _DepthColor;
+  vec4 _NightDepthColor;
+  vec4 _VertexOffset;
+  vec4 _FogShadowColor;
+  float _OffsetY;
+  float _OffsetX;
+  float _FogFallOff;
+  float _UvScale;
+  float _FogEdgeMin;
+  float _AlphaDisMin;
+  float _AlphaDisMax;
+  float _FogPower;
+  float _Level2;
+  float _Level3;
+  float _Level4;
+  float _FogStart;
+  float _FogEnd;
+  float _EdgeContrast;
+  float _DepthColorOn;
+  float _HeightStart;
+  float _HeightEnd;
+  float _EdgeSmootMin;
+  float _EdgeSmootMax;
+  float _EdgeNoise2Blend;
+  float _FogPowerShadow;
+};
+layout(location = 0) uniform sampler2D _MainTex;
+layout(location = 1) uniform sampler2D _FogMask;
+layout(location = 2) uniform sampler2D _FogOfWar;
+layout(location = 3) uniform sampler2D _BlendNoise;
+in vec3 vs_TEXCOORD0;
+in vec4 vs_TEXCOORD2;
+in vec2 vs_TEXCOORD4;
+layout(location = 0) out vec4 SV_Target0;
+vec4 u_xlat16_0;
+vec4 u_xlat10_0;
+vec3 u_xlat16_1;
+vec2 u_xlat2;
+vec3 u_xlat16_2;
+float u_xlat10_2;
+vec3 u_xlat16_3;
+float u_xlat16_5;
+float u_xlat6;
+float u_xlat16_13;
+float u_xlat16_15;
+#define _Timeline 0.35
+#define _Level2 0.4
+#define _Level3 0.6
+#define _Level4 0.3
+#define _AlphaDisMin 0.1
+#define _AlphaDisMax 0.7
+#define _FogShadowOffset vec4(0.01,-0.03,0.005,0.0)
+#define _VertexOffset vec4(18.0,0.0,-0.5,0.0)
+#define _FogFallOff 32
+#define _FogPowerShadow 1.5
+#define _FogSpeed vec4(0.015,-0.012,0.008,0.02)
+#define _Color vec4(0.18,0.1,0.2,0.65)
+#define _NightColor vec4(0.04,0.08,0.15,0.9)
+#define _MainTex_ST vec4(3.0,4.0,0.1,0.05)
+#define _BlendNoise_ST vec4(6.0,5.0,0.2,0.1)
+#define _Time vec4(8.0,160.0,320.0,480.0)
+void main(){
+  (u_xlat10_0 = texture(_FogMask, vs_TEXCOORD4.xy));
+  (u_xlat16_0 = ((-u_xlat10_0) + vec4(1.0, 1.0, 1.0, 1.0)));
+  (u_xlat16_1.x = ((-u_xlat16_0.x) + u_xlat16_0.y));
+  (u_xlat16_1.x = ((_Level2 * u_xlat16_1.x) + u_xlat16_0.x));
+  (u_xlat16_5 = (u_xlat16_0.z + (-u_xlat16_1.x)));
+  (u_xlat16_1.x = ((_Level3 * u_xlat16_5) + u_xlat16_1.x));
+  (u_xlat16_5 = (u_xlat16_0.w + (-u_xlat16_1.x)));
+  (u_xlat16_1.x = ((_Level4 * u_xlat16_5) + u_xlat16_1.x));
+  (u_xlat2.xy = (vs_TEXCOORD0.xz + vec2(_OffsetX, _OffsetY)));
+  (u_xlat2.xy = ((u_xlat2.xy * _Params.zz) + _Params.xy));
+  (u_xlat2.xy = (u_xlat2.xy * vec2(_UvScale)));
+  (u_xlat16_2.x = texture(_FogOfWar, u_xlat2.xy).x);
+  (u_xlat16_5 = ((-u_xlat16_2.x) + 1.0));
+  (u_xlat16_5 = clamp(u_xlat16_5, 0.0, 1.0));
+  (u_xlat16_1.x = (u_xlat16_5 * u_xlat16_1.x));
+  (u_xlat16_1.x = clamp(u_xlat16_1.x, 0.0, 1.0));
+  (u_xlat2.x = (u_xlat16_1.x + (-_AlphaDisMin)));
+  (u_xlat6 = ((-_AlphaDisMin) + _AlphaDisMax));
+  (u_xlat6 = (1.0 / float(u_xlat6)));
+  (u_xlat2.x = (u_xlat6 * u_xlat2.x));
+  (u_xlat2.x = clamp(u_xlat2.x, 0.0, 1.0));
+  (u_xlat16_1.xyz = (_Color.xyz + (-_NightColor.xyz)));
+  (u_xlat16_1.xyz = ((vec3(_Timeline) * u_xlat16_1.xyz) + _NightColor.xyz));
+  (u_xlat16_3.xyz = ((-_NightEdgeColor.xyz) + _EdgeColor.xyz));
+  (u_xlat16_3.xyz = ((vec3(_Timeline) * u_xlat16_3.xyz) + _NightEdgeColor.xyz));
+  (u_xlat16_1.xyz = (u_xlat16_1.xyz + (-u_xlat16_3.xyz)));
+  (u_xlat16_1.xyz = ((u_xlat2.xxx * u_xlat16_1.xyz) + u_xlat16_3.xyz));
+  (SV_Target0.w = (u_xlat2.x * _Color.w));
+  (u_xlat2.xy = ((_Time.xx * _FogSpeed.xy) + vs_TEXCOORD2.xy));
+  (u_xlat16_2.xyz = texture(_MainTex, u_xlat2.xy).xyz);
+  (u_xlat16_1.xyz = (u_xlat16_1.xyz * u_xlat16_2.xyz));
+  (u_xlat16_3.xyz = (_TopColor.xyz + (-_NightTopColor.xyz)));
+  (u_xlat16_3.xyz = ((vec3(_Timeline) * u_xlat16_3.xyz) + _NightTopColor.xyz));
+  (u_xlat2.xy = ((vs_TEXCOORD4.xy * _BlendNoise_ST.xy) + _BlendNoise_ST.zw));
+  (u_xlat2.xy = ((_Time.yy * _FogSpeed.zw) + u_xlat2.xy));
+  (u_xlat10_2 = texture(_BlendNoise, u_xlat2.xy).x);
+  (u_xlat16_13 = ((-u_xlat10_2) + 1.0));
+  (u_xlat16_15 = ((-u_xlat16_13) + 1.0));
+  (u_xlat16_3.xyz = (vec3(u_xlat16_15) * u_xlat16_3.xyz));
+  (SV_Target0.xyz = ((u_xlat16_1.xyz * vec3(u_xlat16_13)) + u_xlat16_3.xyz));
+  return ;
+}

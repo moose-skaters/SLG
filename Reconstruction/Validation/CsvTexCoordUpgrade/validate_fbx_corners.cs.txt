@@ -1,0 +1,41 @@
+var t=System.AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("RdocImporter.RdocImporterWindow")).First(x=>x!=null);
+var f=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;var s=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static;
+var w=UnityEngine.ScriptableObject.CreateInstance(t);w.hideFlags=UnityEngine.HideFlags.HideAndDontSave;
+var failures=new System.Collections.Generic.List<string>();float maxPositionError=0;
+System.Func<UnityEngine.Mesh,System.Collections.Generic.Dictionary<string,System.Collections.Generic.List<UnityEngine.Vector3>>> group=mesh=>{
+ var channels=new System.Collections.Generic.List<UnityEngine.Vector4>[8];
+ for(int c=0;c<8;c++){channels[c]=new System.Collections.Generic.List<UnityEngine.Vector4>();mesh.GetUVs(c,channels[c]);}
+ var result=new System.Collections.Generic.Dictionary<string,System.Collections.Generic.List<UnityEngine.Vector3>>();
+ var positions=mesh.vertices;
+ foreach(int i in mesh.triangles){
+  var fields=new System.Collections.Generic.List<string>();
+  for(int c=0;c<8;c++)if(channels[c].Count>0)fields.Add(c+":"+channels[c][i].ToString("R"));
+  string key=string.Join("|",fields.ToArray());
+  if(!result.ContainsKey(key))result[key]=new System.Collections.Generic.List<UnityEngine.Vector3>();
+  result[key].Add(positions[i]);
+ }
+ return result;
+};
+try{
+ string root="D:/Last-Z/Reconstruction/Validation/CsvTexCoordUpgrade/Fixtures";t.GetField("_csvDir",f).SetValue(w,root);t.GetMethod("ScanHeaders",f).Invoke(w,null);var map=t.GetMethod("GetColumnMap",f).Invoke(w,null);
+ foreach(int eid in new[]{3081,3128}){
+  var data=t.GetMethod("ParseCsv",s).Invoke(null,new object[]{root+"/eid_"+eid+"/eid_"+eid+"_verts.csv",map});
+  var source=(UnityEngine.Mesh)t.GetMethod("BuildMesh",s).Invoke(null,new[]{data});
+  try{
+   var imported=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>("Assets/__RdocTexCoordUpgradeCheck/roundtrip_"+eid+".fbx").GetComponentInChildren<UnityEngine.MeshFilter>().sharedMesh;
+   var a=group(source);var b=group(imported);
+   if(a.Count!=b.Count){failures.Add(eid+": UV corner grouping changed");continue;}
+   foreach(var entry in a){
+    if(!b.ContainsKey(entry.Key)||b[entry.Key].Count!=entry.Value.Count){failures.Add(eid+": UV corner data changed");continue;}
+    var targets=b[entry.Key];
+    foreach(var pos in entry.Value){
+     int nearest=0;float distance=float.PositiveInfinity;
+     for(int i=0;i<targets.Count;i++){float d=UnityEngine.Vector3.Distance(pos,targets[i]);if(d<distance){distance=d;nearest=i;}}
+     targets.RemoveAt(nearest);maxPositionError=UnityEngine.Mathf.Max(maxPositionError,distance);
+     if(distance>0.0001f)failures.Add(eid+": UV-to-position association changed");
+    }
+   }
+  }finally{UnityEngine.Object.DestroyImmediate(source);}
+ }
+ return new{checkedFbxDraws=2,uvCornerValuesExact=failures.Count==0,maxPositionError,failures,passed=failures.Count==0};
+}finally{UnityEngine.Object.DestroyImmediate(w);}

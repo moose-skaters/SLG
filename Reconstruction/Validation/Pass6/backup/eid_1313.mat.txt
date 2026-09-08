@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3535835212512564563
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: eid_1313
+  m_Shader: {fileID: 4800000, guid: 45d892c79b2f9984592d1c32d1bf2a61, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - _ALPHATEST_ON
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3066
+  stringTagMap:
+    RenderType: TransparentCutout
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: ace4b501b02a9104abb4616596786b65, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailTex:
+        m_Texture: {fileID: 2800000, guid: 01016adf9c7bf0947b99709e52db831f, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 929452237c0d9d44a94b254973bcf29e, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ReflectionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SepcularGloss:
+        m_Texture: {fileID: 2800000, guid: 1380bf196abcda446aee23e0fdebf4e8, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphFadeY_ON: 0
+    - _AlphaClip: 1
+    - _AlphaToMask: 0
+    - _Blend: 0
+    - _BlendOp: 0
+    - _Cloth: 0
+    - _Cull: 2
+    - _CustomSpecLightDir_ON: 1
+    - _CutValue: 0.5
+    - _Cutoff: 0.5
+    - _DetailIntensity: 1.3
+    - _DstBlend: 0
+    - _DstBlendAlpha: 0
+    - _FadeY: 0
+    - _Fresnel_Bisa: 0
+    - _Fresnel_Intensity: 0
+    - _Fresnel_ON: 0
+    - _Fresnel_Scale: 0
+    - _Leather: 7.2
+    - _LightIntensity2: 1.0000479
+    - _QueueOffset: 0
+    - _ReflectionIntenSity: 4.16
+    - _Reflectivity: 1
+    - _SampleGI: 0
+    - _Shininess: 0.05
+    - _Skin: 0
+    - _Smoothness0: 1
+    - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
+    - _Surface: 0
+    - _ZWrite: 1
+    m_Colors:
+    - ReflectionDir: {r: -0.02, g: 0, b: 0, a: 0}
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _CustomSpecLightDir: {r: 0.34, g: 0.88, b: -1.74, a: 1}
+    - _Fresnel_Color: {r: 1, g: 1, b: 1, a: 1}
+    - _LightColor2: {r: 0.9999902, g: 0.99999297, b: 1, a: 1}
+    - _ReflectionDecodeParams: {r: 34.493244, g: 2.2, b: 0, a: 1}
+    - _ShadowColor: {r: 0.20883927, g: 0.20883927, b: 0.20883927, a: 1}
+    - _SpecColor: {r: 0.7615293, g: 0.4762481, b: 0.1789743, a: 1}
+  m_BuildTextureStacks: []

@@ -1,0 +1,31 @@
+var root="D:/Last-Z/Reconstruction/Validation/Monster/";var rows=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_materials.json"));var inputs=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_textures.json"));var shader=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Shader>("Assets/LastZ/Shader/Monster.shader");if(shader==null||!shader.isSupported)return "Shader not ready";
+if(!UnityEditor.AssetDatabase.IsValidFolder("Assets/LastZ/Shader/MonsterTextures"))UnityEditor.AssetDatabase.CreateFolder("Assets/LastZ/Shader","MonsterTextures");
+var textures=new System.Collections.Generic.Dictionary<string,UnityEngine.Texture>();
+foreach(var t in inputs){
+ int id=(int)t["id"];var r=t["resource"];int width=(int)r["width"],mips=(int)r["mip_levels"];bool srgb=((string)r["format"]).Contains("SRGB");UnityEngine.Texture texture;
+ if(((string)r["dimension"]).Contains("Cube")){
+  var format=srgb?UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB:UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm;
+  var cube=new UnityEngine.Cubemap(width,format,UnityEngine.Experimental.Rendering.TextureCreationFlags.MipChain,mips);
+  for(int face=0;face<6;face++)for(int mip=0;mip<mips;mip++)cube.SetPixelData<byte>(System.IO.File.ReadAllBytes(root+"mip_data/"+id+"_face"+face+"_mip"+mip+".rgba"),mip,(UnityEngine.CubemapFace)face,0);
+  cube.Apply(false,true);cube.wrapMode=UnityEngine.TextureWrapMode.Clamp;
+  // Source 6911 uses linear texel filtering but nearest mip; unlike CharacterSpecular's trilinear cube.
+  cube.filterMode=UnityEngine.FilterMode.Bilinear;texture=cube;
+ }else{
+  var tex=new UnityEngine.Texture2D(width,(int)r["height"],UnityEngine.TextureFormat.RGBA32,mips,!srgb);tex.LoadRawTextureData(System.IO.File.ReadAllBytes(root+"mip_data/"+id+".rgba"));tex.Apply(false,true);tex.wrapMode=UnityEngine.TextureWrapMode.Repeat;tex.filterMode=UnityEngine.FilterMode.Bilinear;texture=tex;
+ }
+ texture.name="Monster_"+id+"_OriginalMips";texture.anisoLevel=0;string path="Assets/LastZ/Shader/MonsterTextures/Texture_"+id+".asset";var old=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture>(path);if(old==null)UnityEditor.AssetDatabase.CreateAsset(texture,path);else{UnityEditor.EditorUtility.CopySerialized(texture,old);UnityEngine.Object.DestroyImmediate(texture);texture=old;UnityEditor.EditorUtility.SetDirty(texture);}textures.Add("ResourceId::"+id,texture);
+}
+var order=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("D:/Last-Z/Reconstruction/Validation/SceneLit/draw_order.json"));var renderers=UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.MeshRenderer>().Where(r=>r.gameObject.scene.IsValid()).ToArray();var report=new System.Collections.Generic.List<object>();
+foreach(var row in rows){
+ int eid=(int)row["eid"];var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>("Assets/RdocMeshes/eid_"+eid+"/eid_"+eid+".mat");UnityEditor.Undo.RecordObject(mat,"Restore Monster material");mat.shader=shader;mat.shaderKeywords=new string[0];
+ foreach(var b in row["bindings"])mat.SetTexture((string)b["property_name"],textures[(string)b["resource_id"]]);
+ foreach(var section in new[]{"parameters","globals"})foreach(var p in ((Newtonsoft.Json.Linq.JObject)row[section]).Properties()){
+  var a=p.Value.ToObject<float[]>();string name=p.Name=="_ReflectionMap_HDR"?"_ReflectionDecodeParams":p.Name;
+  if(name.EndsWith("_ST")){string prop=name.Substring(0,name.Length-3);if(mat.HasProperty(prop)){mat.SetTextureScale(prop,new UnityEngine.Vector2(a[0],a[1]));mat.SetTextureOffset(prop,new UnityEngine.Vector2(a[2],a[3]));}}
+  else if(mat.HasProperty(name)){if(a.Length==1)mat.SetFloat(name,a[0]);else mat.SetVector(name,new UnityEngine.Vector4(a[0],a[1],a[2],a.Length>3?a[3]:0));}
+ }
+ mat.renderQueue=(int)order[eid.ToString()];mat.SetOverrideTag("RenderType","Opaque");mat.enableInstancing=false;UnityEditor.EditorUtility.SetDirty(mat);
+ var renderer=renderers.Single(r=>r.name=="EID_"+eid+"_inst0");UnityEditor.Undo.RecordObject(renderer,"Assign Monster material");UnityEditor.Undo.RecordObject(renderer.gameObject,"Show restored Monster");renderer.sharedMaterial=mat;renderer.enabled=true;renderer.gameObject.SetActive(true);
+ var mesh=renderer.GetComponent<UnityEngine.MeshFilter>().sharedMesh;report.Add(new{eid,active=renderer.gameObject.activeInHierarchy,material=UnityEditor.AssetDatabase.GetAssetPath(mat),queue=mat.renderQueue,hasUV1=mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord1),hdr=mat.GetVector("_ReflectionDecodeParams").ToString("F6")});
+}
+UnityEditor.AssetDatabase.SaveAssets();UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());System.IO.File.WriteAllText(root+"material_setup.json",Newtonsoft.Json.JsonConvert.SerializeObject(report,Newtonsoft.Json.Formatting.Indented));return new{materials=report,messages=UnityEditor.ShaderUtil.GetShaderMessages(shader)};

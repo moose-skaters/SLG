@@ -1,0 +1,121 @@
+#version 450
+uniform vec2 _GlobalMipBias;
+uniform vec4 _ZBufferParams;
+uniform vec4 _Params;
+uniform float _Timeline;
+layout(std140, binding = 0) uniform UnityPerMaterial{
+  vec4 _EdgeNoiseFlowDir;
+  vec4 _ShadeOffset;
+  vec4 _EdgeClamp;
+  vec4 _MainTex_ST;
+  vec4 _BlendNoise_ST;
+  vec4 _EdgeNoise_ST;
+  vec4 _EdgeNoise2_ST;
+  vec4 _FogShadowOffset;
+  vec4 _FogSpeed;
+  vec4 _FogNightShadowColor;
+  vec4 _Color;
+  vec4 _TopColor;
+  vec4 _NightEdgeColor;
+  vec4 _NightTopColor;
+  vec4 _NightColor;
+  vec4 _EdgeColor;
+  vec4 _EdgeSpeed;
+  vec4 _DepthColor;
+  vec4 _NightDepthColor;
+  vec4 _VertexOffset;
+  vec4 _FogShadowColor;
+  float _OffsetY;
+  float _OffsetX;
+  float _FogFallOff;
+  float _UvScale;
+  float _FogEdgeMin;
+  float _AlphaDisMin;
+  float _AlphaDisMax;
+  float _FogPower;
+  float _Level2;
+  float _Level3;
+  float _Level4;
+  float _FogStart;
+  float _FogEnd;
+  float _EdgeContrast;
+  float _DepthColorOn;
+  float _HeightStart;
+  float _HeightEnd;
+  float _EdgeSmootMin;
+  float _EdgeSmootMax;
+  float _EdgeNoise2Blend;
+  float _FogPowerShadow;
+};
+layout(location = 0) uniform sampler2D _FogMask;
+layout(location = 1) uniform sampler2D _FogOfWar;
+layout(location = 2) uniform sampler2D _CameraDepthTexture;
+in vec3 vs_TEXCOORD0;
+in vec4 vs_TEXCOORD1;
+in vec2 vs_TEXCOORD4;
+layout(location = 0) out vec4 SV_Target0;
+vec4 u_xlat16_0;
+vec4 u_xlat10_0;
+float u_xlat16_1;
+vec2 u_xlat2;
+float u_xlat16_2;
+float u_xlat16_4;
+vec2 u_xlat5;
+#define _Timeline 0.35
+#define _Level2 0.4
+#define _Level3 0.6
+#define _Level4 0.3
+#define _AlphaDisMin 0.1
+#define _AlphaDisMax 0.7
+#define _FogShadowOffset vec4(0.01,-0.03,0.005,0.0)
+#define _VertexOffset vec4(18.0,0.0,-0.5,0.0)
+#define _FogFallOff 32
+#define _FogPowerShadow 1.5
+#define _FogSpeed vec4(0.015,-0.012,0.008,0.02)
+#define _Color vec4(0.18,0.1,0.2,0.65)
+#define _NightColor vec4(0.04,0.08,0.15,0.9)
+#define _MainTex_ST vec4(3.0,4.0,0.1,0.05)
+#define _BlendNoise_ST vec4(6.0,5.0,0.2,0.1)
+#define _Time vec4(8.0,160.0,320.0,480.0)
+void main(){
+  (u_xlat10_0 = texture(_FogMask, vs_TEXCOORD4.xy));
+  (u_xlat16_0 = ((-u_xlat10_0) + vec4(1.0, 1.0, 1.0, 1.0)));
+  (u_xlat16_1 = ((-u_xlat16_0.x) + u_xlat16_0.y));
+  (u_xlat16_1 = ((_Level2 * u_xlat16_1) + u_xlat16_0.x));
+  (u_xlat16_4 = (u_xlat16_0.z + (-u_xlat16_1)));
+  (u_xlat16_1 = ((_Level3 * u_xlat16_4) + u_xlat16_1));
+  (u_xlat16_4 = (u_xlat16_0.w + (-u_xlat16_1)));
+  (u_xlat16_1 = ((_Level4 * u_xlat16_4) + u_xlat16_1));
+  (u_xlat2.xy = (vs_TEXCOORD0.xz + vec2(_OffsetX, _OffsetY)));
+  (u_xlat2.xy = ((u_xlat2.xy * _Params.zz) + _Params.xy));
+  (u_xlat2.xy = (u_xlat2.xy * vec2(_UvScale)));
+  (u_xlat16_2 = texture(_FogOfWar, u_xlat2.xy).x);
+  (u_xlat16_4 = ((-u_xlat16_2) + 1.0));
+  (u_xlat16_4 = clamp(u_xlat16_4, 0.0, 1.0));
+  (u_xlat2.x = ((u_xlat16_4 * u_xlat16_1) + (-_AlphaDisMin)));
+  (u_xlat5.x = ((-_AlphaDisMin) + _AlphaDisMax));
+  (u_xlat5.x = (1.0 / float(u_xlat5.x)));
+  (u_xlat2.x = (u_xlat5.x * u_xlat2.x));
+  (u_xlat2.x = clamp(u_xlat2.x, 0.0, 1.0));
+  (u_xlat5.x = (1.0 / float(vs_TEXCOORD1.w)));
+  (u_xlat5.xy = (u_xlat5.xx * vs_TEXCOORD1.xy));
+  (u_xlat5.x = texture(_CameraDepthTexture, u_xlat5.xy, _GlobalMipBias.x).x);
+  (u_xlat5.x = ((_ZBufferParams.z * u_xlat5.x) + _ZBufferParams.w));
+  (u_xlat5.x = (1.0 / u_xlat5.x));
+  (u_xlat5.x = (u_xlat5.x + (-vs_TEXCOORD1.w)));
+  (u_xlat5.x = (u_xlat5.x + _VertexOffset.x));
+  (u_xlat5.x = (u_xlat5.x / _FogFallOff));
+  (u_xlat5.x = clamp(u_xlat5.x, 0.0, 1.0));
+  (u_xlat5.x = log2(u_xlat5.x));
+  (u_xlat5.x = (u_xlat5.x * _FogPowerShadow));
+  (u_xlat5.x = exp2(u_xlat5.x));
+  (u_xlat2.x = (u_xlat5.x * u_xlat2.x));
+  (u_xlat2.x = min(u_xlat2.x, 1.0));
+  (u_xlat16_1 = ((-_Timeline) + 1.0));
+  (u_xlat16_4 = ((u_xlat16_1 * (-u_xlat2.x)) + u_xlat2.x));
+  (u_xlat16_0 = (_FogNightShadowColor + (-_FogShadowColor)));
+  (u_xlat16_0 = ((vec4(u_xlat16_1) * u_xlat16_0) + _FogShadowColor));
+  (SV_Target0.w = (u_xlat16_0.w * u_xlat16_4));
+  (SV_Target0.xyz = u_xlat16_0.xyz);
+  return ;
+}

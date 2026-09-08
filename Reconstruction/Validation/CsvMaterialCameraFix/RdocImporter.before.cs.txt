@@ -1,0 +1,815 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using UnityEditor;
+using UnityEditor.Formats.Fbx.Exporter;
+using UnityEngine;
+
+namespace RdocImporter
+{
+    public class RdocImporterWindow : EditorWindow
+    {
+        private enum Tab { CsvToFbx, ApplyTransform }
+        private Tab _tab = Tab.CsvToFbx;
+
+        // ---- Step 1: CSV → FBX
+        private string   _csvDir    = "C:/rdoc_export";
+        private string   _fbxDir    = "Assets/RdocMeshes";
+        private bool     _openGlCoords = true;
+        private string[] _csvHeaders   = Array.Empty<string>();
+        private string[] _headerLabels = Array.Empty<string>();
+        private int _posXIdx = -1, _posYIdx = -1, _posZIdx = -1;
+        private int _norXIdx = -1, _norYIdx = -1, _norZIdx = -1;
+        private int _uvXIdx  = -1, _uvYIdx  = -1;
+        private int _uv2XIdx = -1, _uv2YIdx = -1;
+        private int _tanXIdx = -1, _tanYIdx = -1, _tanZIdx = -1, _tanWIdx = -1;
+        private int _colRIdx = -1, _colGIdx = -1, _colBIdx = -1, _colAIdx = -1;
+        private string _lastScanned = "";
+        private int _scannedCsvCount;
+        private Vector2 _scroll1;
+
+        // ---- Step 2: Apply Transform
+        private string _jsonPath   = "C:/rdoc_export/matrices.json";
+        private string _fbxSrcDir  = "Assets/RdocMeshes";
+        private string _parentName = "RdocImport";
+        private bool   _applyFlipZ = false;
+        private bool   _reconstructCamera = true;
+        private Vector2 _scroll2;
+
+        [MenuItem("Window/RenderDoc CSV Importer")]
+        private static void Open() =>
+            GetWindow<RdocImporterWindow>("RenderDoc CSV Importer").Show();
+
+        private void OnGUI()
+        {
+            _tab = (Tab)GUILayout.Toolbar((int)_tab,
+                new[] { "Step 1: CSV → FBX", "Step 2: Apply Transform" });
+            EditorGUILayout.Space();
+
+            if (_tab == Tab.CsvToFbx) DrawStep1();
+            else                       DrawStep2();
+        }
+
+        // ==================================================================
+        // Step 1
+        // ==================================================================
+
+        private void DrawStep1()
+        {
+            _scroll1 = EditorGUILayout.BeginScrollView(_scroll1);
+
+            // Directories
+            EditorGUILayout.BeginHorizontal();
+            _csvDir = EditorGUILayout.TextField("CSV Directory", _csvDir);
+            if (GUILayout.Button("...", GUILayout.Width(30)))
+            {
+                string d = EditorUtility.OpenFolderPanel("CSV Directory", _csvDir, "");
+                if (!string.IsNullOrEmpty(d)) _csvDir = d;
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            _fbxDir = EditorGUILayout.TextField("FBX Output (Assets/...)", _fbxDir);
+            if (GUILayout.Button("...", GUILayout.Width(30)))
+            {
+                string d = EditorUtility.OpenFolderPanel("FBX Output", _fbxDir, "");
+                if (!string.IsNullOrEmpty(d))
+                    _fbxDir = "Assets" + d.Replace(Application.dataPath, "");
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space();
+            if (GUILayout.Button("Scan CSV Headers"))
+                ScanHeaders();
+
+            // Column mapping
+            if (_csvHeaders.Length > 0)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.HelpBox(
+                    $"Columns from {_scannedCsvCount} CSV files. Each file is read by column name. " +
+                    "CSV meshes keep only supplied attributes. FBX import uses Unity's import settings.",
+                    MessageType.Info);
+                GUILayout.Label("Vertex Attribute Mapping", EditorStyles.boldLabel);
+                _posXIdx = ColPopup("Position X *", _posXIdx);
+                _posYIdx = ColPopup("Position Y *", _posYIdx);
+                _posZIdx = ColPopup("Position Z *", _posZIdx);
+                _norXIdx = ColPopup("Normal X",     _norXIdx);
+                _norYIdx = ColPopup("Normal Y",     _norYIdx);
+                _norZIdx = ColPopup("Normal Z",     _norZIdx);
+                _uvXIdx  = ColPopup("UV X",         _uvXIdx);
+                _uvYIdx  = ColPopup("UV Y",         _uvYIdx);
+                _uv2XIdx = ColPopup("UV2 X",        _uv2XIdx);
+                _uv2YIdx = ColPopup("UV2 Y",        _uv2YIdx);
+                _tanXIdx = ColPopup("Tangent X",    _tanXIdx);
+                _tanYIdx = ColPopup("Tangent Y",    _tanYIdx);
+                _tanZIdx = ColPopup("Tangent Z",    _tanZIdx);
+                _tanWIdx = ColPopup("Tangent W",    _tanWIdx);
+                _colRIdx = ColPopup("Color R",      _colRIdx);
+                _colGIdx = ColPopup("Color G",      _colGIdx);
+                _colBIdx = ColPopup("Color B",      _colBIdx);
+                _colAIdx = ColPopup("Color A",      _colAIdx);
+            }
+
+            EditorGUILayout.Space();
+            GUI.enabled = _lastScanned == _csvDir && _csvHeaders.Length > 0
+                && _posXIdx >= 0 && _posYIdx >= 0 && _posZIdx >= 0;
+            if (GUILayout.Button("Export CSV → FBX", GUILayout.Height(30)))
+                RunCsvToFbx();
+            GUI.enabled = true;
+
+            EditorGUILayout.EndScrollView();
+        }
+
+        private int ColPopup(string label, int cur)
+        {
+            int display = Mathf.Clamp(cur + 1, 0, _headerLabels.Length - 1);
+            display = EditorGUILayout.Popup(label, display, _headerLabels);
+            return display - 1;
+        }
+
+        // Returns (drawFolder, csvPath) pairs — one CSV per eid_* subfolder.
+        private List<(string drawFolder, string csvPath)> FindDrawCsvs()
+        {
+            var result = new List<(string, string)>();
+
+            // New layout: _csvDir/eid_<EID>/*_verts.csv
+            if (Directory.Exists(_csvDir))
+            {
+                foreach (string sub in Directory.GetDirectories(_csvDir, "eid_*"))
+                {
+                    string[] csvs = Directory.GetFiles(sub, "*_verts.csv");
+                    if (csvs.Length > 0)
+                        result.Add((sub, csvs[0]));
+                }
+            }
+
+            // Fallback: flat layout (_csvDir/*_verts.csv) for older exports
+            if (result.Count == 0)
+            {
+                foreach (string csv in Directory.GetFiles(_csvDir, "*_verts.csv"))
+                    result.Add((_csvDir, csv));
+            }
+
+            return result;
+        }
+
+        private void ScanHeaders()
+        {
+            var pairs = FindDrawCsvs();
+
+            // Also check matrices.json for csv refs if nothing found yet
+            if (pairs.Count == 0)
+            {
+                string jsonPath = Path.Combine(_csvDir, "matrices.json");
+                if (File.Exists(jsonPath))
+                {
+                    var mf = JsonUtility.FromJson<MatricesFile>(File.ReadAllText(jsonPath));
+                    foreach (var d in mf.draws)
+                        if (!string.IsNullOrEmpty(d.vertex_csv))
+                        {
+                            string subPath  = Path.Combine(_csvDir, d.draw_folder ?? "", d.vertex_csv);
+                            string flatPath = Path.Combine(_csvDir, d.vertex_csv);
+                            string found = File.Exists(subPath) ? subPath
+                                         : File.Exists(flatPath) ? flatPath : null;
+                            if (found != null) pairs.Add((Path.GetDirectoryName(found), found));
+                        }
+                }
+            }
+
+            if (pairs.Count == 0)
+            {
+                EditorUtility.DisplayDialog("Error", "No *_verts.csv found in directory or eid_* subfolders.", "OK");
+                return;
+            }
+
+            // The first draw can have fewer attributes than later draws.
+            // Collect names from every header; ParseCsv resolves them per file.
+            var headers = new List<string>();
+            var coverage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pair in pairs)
+            {
+                string firstLine;
+                using (var sr = new StreamReader(pair.csvPath, Encoding.UTF8))
+                    firstLine = sr.ReadLine() ?? "";
+                var seenInFile = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (string column in firstLine.Split(','))
+                {
+                    string name = column.Trim();
+                    if (name.Length == 0 || !seenInFile.Add(name)) continue;
+                    if (!coverage.ContainsKey(name))
+                    {
+                        headers.Add(name);
+                        coverage.Add(name, 0);
+                    }
+                    coverage[name]++;
+                }
+            }
+            _csvHeaders = headers.ToArray();
+            _scannedCsvCount = pairs.Count;
+
+            _headerLabels = new string[_csvHeaders.Length + 1];
+            _headerLabels[0] = "(none)";
+            for (int i = 0; i < _csvHeaders.Length; i++)
+                _headerLabels[i + 1] = $"{_csvHeaders[i]} ({coverage[_csvHeaders[i]]}/{_scannedCsvCount} CSVs)";
+
+            _posXIdx = AutoDetect("in_POSITION0.x", "POSITION0.x", "POSITION.x", "_Position.x", "pos_x");
+            _posYIdx = AutoDetect("in_POSITION0.y", "POSITION0.y", "POSITION.y", "_Position.y", "pos_y");
+            _posZIdx = AutoDetect("in_POSITION0.z", "POSITION0.z", "POSITION.z", "_Position.z", "pos_z");
+            _norXIdx = AutoDetect("in_NORMAL0.x", "NORMAL0.x", "NORMAL.x", "normal_x");
+            _norYIdx = AutoDetect("in_NORMAL0.y", "NORMAL0.y", "NORMAL.y", "normal_y");
+            _norZIdx = AutoDetect("in_NORMAL0.z", "NORMAL0.z", "NORMAL.z", "normal_z");
+            _uvXIdx  = AutoDetect("in_TEXCOORD0.x", "TEXCOORD0.x", "TEXCOORD.x", "uv_x");
+            _uvYIdx  = AutoDetect("in_TEXCOORD0.y", "TEXCOORD0.y", "TEXCOORD.y", "uv_y");
+            _uv2XIdx = AutoDetect("in_TEXCOORD1.x", "TEXCOORD1.x", "uv2_x");
+            _uv2YIdx = AutoDetect("in_TEXCOORD1.y", "TEXCOORD1.y", "uv2_y");
+            _tanXIdx = AutoDetect("in_TANGENT0.x", "TANGENT0.x", "TANGENT.x", "tangent_x");
+            _tanYIdx = AutoDetect("in_TANGENT0.y", "TANGENT0.y", "TANGENT.y", "tangent_y");
+            _tanZIdx = AutoDetect("in_TANGENT0.z", "TANGENT0.z", "TANGENT.z", "tangent_z");
+            _tanWIdx = AutoDetect("in_TANGENT0.w", "TANGENT0.w", "TANGENT.w", "tangent_w");
+            _colRIdx = AutoDetect("in_COLOR0.x", "COLOR0.x", "COLOR0.r", "COLOR.x", "COLOR.r");
+            _colGIdx = AutoDetect("in_COLOR0.y", "COLOR0.y", "COLOR0.g", "COLOR.y", "COLOR.g");
+            _colBIdx = AutoDetect("in_COLOR0.z", "COLOR0.z", "COLOR0.b", "COLOR.z", "COLOR.b");
+            _colAIdx = AutoDetect("in_COLOR0.w", "COLOR0.w", "COLOR0.a", "COLOR.w", "COLOR.a");
+
+            _lastScanned = _csvDir;
+            Repaint();
+        }
+
+        private int AutoDetect(params string[] candidates)
+        {
+            foreach (string c in candidates)
+                for (int i = 0; i < _csvHeaders.Length; i++)
+                    if (string.Equals(_csvHeaders[i], c, StringComparison.OrdinalIgnoreCase))
+                        return i;
+            return -1;
+        }
+
+        private ColumnMap GetColumnMap()
+        {
+            return new ColumnMap
+            {
+                idxCol = "IDX",
+                posX = _posXIdx >= 0 ? _csvHeaders[_posXIdx] : null,
+                posY = _posYIdx >= 0 ? _csvHeaders[_posYIdx] : null,
+                posZ = _posZIdx >= 0 ? _csvHeaders[_posZIdx] : null,
+                norX = _norXIdx >= 0 ? _csvHeaders[_norXIdx] : null,
+                norY = _norYIdx >= 0 ? _csvHeaders[_norYIdx] : null,
+                norZ = _norZIdx >= 0 ? _csvHeaders[_norZIdx] : null,
+                uvX  = _uvXIdx  >= 0 ? _csvHeaders[_uvXIdx]  : null,
+                uvY  = _uvYIdx  >= 0 ? _csvHeaders[_uvYIdx]  : null,
+                uv2X = _uv2XIdx >= 0 ? _csvHeaders[_uv2XIdx] : null,
+                uv2Y = _uv2YIdx >= 0 ? _csvHeaders[_uv2YIdx] : null,
+                tanX = _tanXIdx >= 0 ? _csvHeaders[_tanXIdx] : null,
+                tanY = _tanYIdx >= 0 ? _csvHeaders[_tanYIdx] : null,
+                tanZ = _tanZIdx >= 0 ? _csvHeaders[_tanZIdx] : null,
+                tanW = _tanWIdx >= 0 ? _csvHeaders[_tanWIdx] : null,
+                colR = _colRIdx >= 0 ? _csvHeaders[_colRIdx] : null,
+                colG = _colGIdx >= 0 ? _csvHeaders[_colGIdx] : null,
+                colB = _colBIdx >= 0 ? _csvHeaders[_colBIdx] : null,
+                colA = _colAIdx >= 0 ? _csvHeaders[_colAIdx] : null,
+            };
+        }
+
+        private void RunCsvToFbx()
+        {
+            var pairs = FindDrawCsvs();
+            if (pairs.Count == 0)
+            {
+                EditorUtility.DisplayDialog("Error", "No *_verts.csv files found.", "OK");
+                return;
+            }
+
+            string absRootOut = Path.Combine(Application.dataPath,
+                _fbxDir.StartsWith("Assets/") ? _fbxDir.Substring(7) : _fbxDir);
+            Directory.CreateDirectory(absRootOut);
+            var colMap = GetColumnMap();
+
+            int exported = 0;
+            for (int i = 0; i < pairs.Count; i++)
+            {
+                string drawFolder = pairs[i].drawFolder;
+                string csv        = pairs[i].csvPath;
+                string csvName    = Path.GetFileNameWithoutExtension(csv);
+
+                string eidFolderName = Path.GetFileName(drawFolder.TrimEnd('/', '\\'));
+                if (!eidFolderName.StartsWith("eid_"))
+                    eidFolderName = csvName;
+
+                EditorUtility.DisplayProgressBar("Exporting FBX",
+                    eidFolderName, (float)i / pairs.Count);
+
+                string assetDrawDir = _fbxDir + "/" + eidFolderName;
+                string absDrawDir   = Path.Combine(absRootOut, eidFolderName);
+                Directory.CreateDirectory(absDrawDir);
+
+                var importedTextures = new List<Texture2D>();
+                if (drawFolder != _csvDir)
+                {
+                    foreach (string tga in Directory.GetFiles(drawFolder, "*.tga"))
+                    {
+                        string destAssetPath = assetDrawDir + "/" + Path.GetFileName(tga);
+                        string destAbs       = Path.Combine(absDrawDir, Path.GetFileName(tga));
+                        if (!File.Exists(destAbs))
+                            File.Copy(tga, destAbs);
+                        importedTextures.Add(null);
+                        _ = destAssetPath;
+                    }
+                }
+
+                MeshData md;
+                try { md = ParseCsv(csv, colMap); }
+                catch (Exception e) { Debug.LogWarning($"{eidFolderName}: {e.Message}"); continue; }
+
+                if (md.positions.Length == 0) { Debug.LogWarning($"{eidFolderName}: no vertices"); continue; }
+
+                Mesh mesh = BuildMesh(md);
+                mesh.name = csvName;
+
+                GameObject go = new GameObject(csvName);
+                go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                go.AddComponent<MeshRenderer>();
+
+                string fbxAssetPath = assetDrawDir + "/" + csvName + ".fbx";
+                try
+                {
+                    string exportedPath = ModelExporter.ExportObject(fbxAssetPath, go);
+                    if (string.IsNullOrEmpty(exportedPath))
+                        throw new IOException("FBX exporter did not write a file.");
+                    exported++;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"{eidFolderName}: FBX export/import failed: {e.Message}");
+                }
+                finally
+                {
+                    DestroyImmediate(go);
+                    DestroyImmediate(mesh);
+                }
+            }
+
+            EditorUtility.ClearProgressBar();
+            AssetDatabase.Refresh();
+
+            AssignTexturesToFbxMaterials(pairs, absRootOut);
+
+            EditorUtility.DisplayDialog("Done", $"Exported {exported} FBX files to {_fbxDir}", "OK");
+        }
+
+        private void AssignTexturesToFbxMaterials(List<(string drawFolder, string csvPath)> pairs, string absRootOut)
+        {
+            foreach (var (drawFolder, csv) in pairs)
+            {
+                if (drawFolder == _csvDir) continue;
+
+                string csvName       = Path.GetFileNameWithoutExtension(csv);
+                string eidFolderName = Path.GetFileName(drawFolder.TrimEnd('/', '\\'));
+                string assetDrawDir  = _fbxDir + "/" + eidFolderName;
+
+                string fbxAssetPath = assetDrawDir + "/" + csvName + ".fbx";
+                var fbxGo = AssetDatabase.LoadAssetAtPath<GameObject>(fbxAssetPath);
+                if (fbxGo == null) continue;
+
+                string absDrawDir = Path.Combine(absRootOut, eidFolderName);
+                var textures = new List<Texture2D>();
+                foreach (string tga in Directory.GetFiles(absDrawDir, "*.tga"))
+                {
+                    string texAsset = assetDrawDir + "/" + Path.GetFileName(tga);
+                    var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texAsset);
+                    if (tex != null) textures.Add(tex);
+                }
+
+                if (textures.Count == 0) continue;
+
+                string[] guids = AssetDatabase.FindAssets("t:Material", new[] { assetDrawDir });
+                foreach (string guid in guids)
+                {
+                    string matPath = AssetDatabase.GUIDToAssetPath(guid);
+                    var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+                    if (mat == null) continue;
+                    mat.SetTexture("_MainTex", textures[0]);
+                    EditorUtility.SetDirty(mat);
+                }
+            }
+            AssetDatabase.SaveAssets();
+        }
+
+
+        // ==================================================================
+        // Step 2
+        // ==================================================================
+
+        private void DrawStep2()
+        {
+            _scroll2 = EditorGUILayout.BeginScrollView(_scroll2);
+
+            EditorGUILayout.BeginHorizontal();
+            _jsonPath = EditorGUILayout.TextField("matrices.json", _jsonPath);
+            if (GUILayout.Button("...", GUILayout.Width(30)))
+            {
+                string p = EditorUtility.OpenFilePanel("Select matrices.json", "", "json");
+                if (!string.IsNullOrEmpty(p)) _jsonPath = p;
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            _fbxSrcDir = EditorGUILayout.TextField("FBX Assets Dir", _fbxSrcDir);
+            if (GUILayout.Button("...", GUILayout.Width(30)))
+            {
+                string d = EditorUtility.OpenFolderPanel("FBX Assets Dir", _fbxSrcDir, "");
+                if (!string.IsNullOrEmpty(d))
+                    _fbxSrcDir = "Assets" + d.Replace(Application.dataPath, "");
+            }
+            EditorGUILayout.EndHorizontal();
+
+            _parentName = EditorGUILayout.TextField("Parent Object Name", _parentName);
+            _applyFlipZ = EditorGUILayout.Toggle("OpenGL/Vulkan (flip Z on position)", _applyFlipZ);
+            _reconstructCamera = EditorGUILayout.Toggle("Reconstruct Camera from VP", _reconstructCamera);
+
+            EditorGUILayout.HelpBox(
+                "Loads FBX from FBX Assets Dir by matching EID name, then sets world Transform from M matrix.",
+                MessageType.Info);
+
+            EditorGUILayout.Space();
+            if (GUILayout.Button("Apply Transforms to Scene", GUILayout.Height(30)))
+                RunApplyTransforms();
+
+            EditorGUILayout.EndScrollView();
+        }
+
+        private void RunApplyTransforms()
+        {
+            if (!File.Exists(_jsonPath))
+            {
+                EditorUtility.DisplayDialog("Error", "matrices.json not found.", "OK");
+                return;
+            }
+
+            MatricesFile mf;
+            try { mf = JsonUtility.FromJson<MatricesFile>(File.ReadAllText(_jsonPath)); }
+            catch (Exception e) { EditorUtility.DisplayDialog("Error", e.Message, "OK"); return; }
+
+            GameObject parent = new GameObject(_parentName);
+            Undo.RegisterCreatedObjectUndo(parent, "RdocApplyTransform");
+
+            int placed = 0;
+            for (int d = 0; d < mf.draws.Length; d++)
+            {
+                DrawEntry draw = mf.draws[d];
+                EditorUtility.DisplayProgressBar("Placing objects",
+                    $"EID {draw.eid}", (float)d / mf.draws.Length);
+
+                string eidFolder   = draw.draw_folder ?? $"eid_{draw.eid}";
+                string assetName   = $"eid_{draw.eid}_verts";
+                string subPath     = $"{_fbxSrcDir}/{eidFolder}/{assetName}.fbx";
+                string flatPath    = $"{_fbxSrcDir}/{assetName}.fbx";
+                string assetPath   = AssetDatabase.LoadAssetAtPath<GameObject>(subPath) != null ? subPath : flatPath;
+
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                if (prefab == null)
+                {
+                    Debug.LogWarning($"FBX not found: {subPath} or {flatPath}");
+                    continue;
+                }
+
+                bool colMajor = draw.matrix_order == "column";
+
+                foreach (var inst in draw.instances)
+                {
+                    Matrix4x4 M = BuildMatrix(inst.M, colMajor);
+
+                    GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                    go.name = $"EID_{draw.eid}_inst{inst.instance_id}";
+                    go.transform.SetParent(parent.transform, false);
+
+                    ApplyMatrixToTransform(go.transform, M, _applyFlipZ);
+                    Undo.RegisterCreatedObjectUndo(go, "RdocApplyTransform");
+                    placed++;
+                }
+            }
+
+            EditorUtility.ClearProgressBar();
+
+            // --- Camera reconstruction from VP matrix ---
+            if (_reconstructCamera && mf.camera != null && mf.camera.vp_matrix != null
+                && mf.camera.vp_matrix.Length >= 16)
+            {
+                bool colMajorCam = true;
+                if (mf.draws.Length > 0 && mf.draws[0].matrix_order != null)
+                    colMajorCam = mf.draws[0].matrix_order == "column";
+
+                Matrix4x4 VP = BuildMatrix(mf.camera.vp_matrix, colMajorCam);
+                if (_applyFlipZ)
+                {
+                    Matrix4x4 F = Matrix4x4.Scale(new Vector3(1, 1, -1));
+                    VP = F * VP * F;
+                }
+
+                GameObject camGo = ReconstructCamera(VP,
+                    mf.camera.viewport_width, mf.camera.viewport_height);
+                camGo.transform.SetParent(parent.transform, true);
+                Undo.RegisterCreatedObjectUndo(camGo, "RdocApplyTransform");
+            }
+
+            EditorUtility.DisplayDialog("Done", $"Placed {placed} objects in scene.", "OK");
+        }
+
+        // ==================================================================
+        // CSV parsing
+        // ==================================================================
+
+        private struct ColumnMap
+        {
+            public string idxCol;
+            public string posX, posY, posZ;
+            public string norX, norY, norZ;
+            public string uvX, uvY;
+            public string uv2X, uv2Y;
+            public string tanX, tanY, tanZ, tanW;
+            public string colR, colG, colB, colA;
+        }
+
+        private struct MeshData
+        {
+            public Vector3[] positions;
+            public Vector3[] normals;
+            public Vector2[] uvs;
+            public Vector2[] uv2s;
+            public Vector4[] tangents;
+            public Color[]   colors;
+            public int[]     triangles;
+        }
+
+        private static MeshData ParseCsv(string path, ColumnMap cm)
+        {
+            string[] lines = File.ReadAllLines(path, Encoding.UTF8);
+            if (lines.Length < 2) throw new Exception("No data rows.");
+
+            string[] hdr = lines[0].Split(',');
+            for (int i = 0; i < hdr.Length; i++) hdr[i] = hdr[i].Trim();
+
+            int Idx(string name)
+            {
+                if (name == null) return -1;
+                for (int i = 0; i < hdr.Length; i++)
+                    if (string.Equals(hdr[i], name, StringComparison.OrdinalIgnoreCase)) return i;
+                return -1;
+            }
+
+            int idxCol = Idx(cm.idxCol);
+            int posX = Idx(cm.posX), posY = Idx(cm.posY), posZ = Idx(cm.posZ);
+            int norX = Idx(cm.norX), norY = Idx(cm.norY), norZ = Idx(cm.norZ);
+            int uvX  = Idx(cm.uvX),  uvY  = Idx(cm.uvY);
+            int uv2X = Idx(cm.uv2X), uv2Y = Idx(cm.uv2Y);
+            int tanX = Idx(cm.tanX), tanY = Idx(cm.tanY), tanZ = Idx(cm.tanZ), tanW = Idx(cm.tanW);
+            int colR = Idx(cm.colR), colG = Idx(cm.colG), colB = Idx(cm.colB), colA = Idx(cm.colA);
+
+            if (posX < 0 || posY < 0 || posZ < 0) throw new Exception("Position columns not found in header.");
+
+            bool hasNor = norX >= 0 && norY >= 0 && norZ >= 0;
+            bool hasUv  = uvX  >= 0 && uvY  >= 0;
+            bool hasUv2 = uv2X >= 0 && uv2Y >= 0;
+            bool hasTan = tanX >= 0 && tanY >= 0 && tanZ >= 0;
+            bool hasCol = colR >= 0 && colG >= 0 && colB >= 0;
+
+            var vertByIdx = new Dictionary<int, int>();
+            var positions = new List<Vector3>();
+            var normals   = new List<Vector3>();
+            var uvs       = new List<Vector2>();
+            var uv2s      = new List<Vector2>();
+            var tangents  = new List<Vector4>();
+            var colors    = new List<Color>();
+            var triangles = new List<int>();
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string line = lines[i].Trim();
+                if (string.IsNullOrEmpty(line)) continue;
+                string[] cols = line.Split(',');
+
+                int idx = idxCol >= 0 ? ParseInt(cols, idxCol) : (i - 1);
+
+                if (!vertByIdx.TryGetValue(idx, out int vIdx))
+                {
+                    vIdx = positions.Count;
+                    vertByIdx[idx] = vIdx;
+                    positions.Add(new Vector3(
+                        ParseFloat(cols, posX),
+                        ParseFloat(cols, posY),
+                        ParseFloat(cols, posZ)));
+                    if (hasNor) normals.Add(new Vector3(
+                        ParseFloat(cols, norX),
+                        ParseFloat(cols, norY),
+                        ParseFloat(cols, norZ)));
+                    if (hasUv) uvs.Add(new Vector2(
+                        ParseFloat(cols, uvX),
+                        ParseFloat(cols, uvY)));
+                    if (hasUv2) uv2s.Add(new Vector2(
+                        ParseFloat(cols, uv2X),
+                        ParseFloat(cols, uv2Y)));
+                    if (hasTan) tangents.Add(new Vector4(
+                        ParseFloat(cols, tanX),
+                        ParseFloat(cols, tanY),
+                        ParseFloat(cols, tanZ),
+                        tanW >= 0 ? ParseFloat(cols, tanW) : 1f));
+                    if (hasCol) colors.Add(new Color(
+                        ParseFloat(cols, colR),
+                        ParseFloat(cols, colG),
+                        ParseFloat(cols, colB),
+                        colA >= 0 ? ParseFloat(cols, colA) : 1f));
+                }
+                triangles.Add(vIdx);
+            }
+
+            return new MeshData
+            {
+                positions = positions.ToArray(),
+                normals   = hasNor ? normals.ToArray() : Array.Empty<Vector3>(),
+                uvs       = hasUv  ? uvs.ToArray()     : Array.Empty<Vector2>(),
+                uv2s      = hasUv2 ? uv2s.ToArray()    : Array.Empty<Vector2>(),
+                tangents  = hasTan ? tangents.ToArray() : Array.Empty<Vector4>(),
+                colors    = hasCol ? colors.ToArray()   : Array.Empty<Color>(),
+                triangles = triangles.ToArray(),
+            };
+        }
+
+        private static float ParseFloat(string[] c, int i) =>
+            i < 0 || i >= c.Length ? 0f : float.Parse(c[i].Trim(), CultureInfo.InvariantCulture);
+
+        private static int ParseInt(string[] c, int i) =>
+            i < 0 || i >= c.Length ? 0 : int.Parse(c[i].Trim(), CultureInfo.InvariantCulture);
+
+        // ==================================================================
+        // Mesh build
+        // ==================================================================
+
+        private static Mesh BuildMesh(MeshData d)
+        {
+            var mesh = new Mesh
+            {
+                indexFormat = d.positions.Length > 65535
+                    ? UnityEngine.Rendering.IndexFormat.UInt32
+                    : UnityEngine.Rendering.IndexFormat.UInt16
+            };
+            mesh.vertices  = d.positions;
+            mesh.triangles = d.triangles;
+            if (d.normals.Length  == d.positions.Length) mesh.normals  = d.normals;
+            if (d.uvs.Length      == d.positions.Length) mesh.uv       = d.uvs;
+            if (d.uv2s.Length     == d.positions.Length) mesh.uv2      = d.uv2s;
+            if (d.tangents.Length == d.positions.Length) mesh.tangents = d.tangents;
+            if (d.colors.Length   == d.positions.Length) mesh.colors   = d.colors;
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        // ==================================================================
+        // Matrix helpers
+        // ==================================================================
+
+        private static Vector3 PerspectiveDivide(Vector4 v)
+        {
+            if (Mathf.Abs(v.w) < 1e-8f) return new Vector3(v.x, v.y, v.z);
+            return new Vector3(v.x / v.w, v.y / v.w, v.z / v.w);
+        }
+
+        private static GameObject ReconstructCamera(Matrix4x4 VP, int vpWidth, int vpHeight)
+        {
+            Matrix4x4 invVP = VP.inverse;
+
+            // Unproject clip-space corners to world space (OpenGL NDC: z in [-1,1])
+            Vector3 nearCenter = PerspectiveDivide(invVP * new Vector4( 0,  0, -1, 1));
+            Vector3 farCenter  = PerspectiveDivide(invVP * new Vector4( 0,  0,  1, 1));
+            Vector3 nearTop    = PerspectiveDivide(invVP * new Vector4( 0,  1, -1, 1));
+            Vector3 nearBot    = PerspectiveDivide(invVP * new Vector4( 0, -1, -1, 1));
+            Vector3 nearRight  = PerspectiveDivide(invVP * new Vector4( 1,  0, -1, 1));
+            Vector3 nearLeft   = PerspectiveDivide(invVP * new Vector4(-1,  0, -1, 1));
+            Vector3 farTop     = PerspectiveDivide(invVP * new Vector4( 0,  1,  1, 1));
+            Vector3 farBot     = PerspectiveDivide(invVP * new Vector4( 0, -1,  1, 1));
+
+            // Camera position: convergence of frustum edge rays
+            Vector3 camPos = ClosestPointBetweenRays(
+                nearTop, (farTop - nearTop).normalized,
+                nearBot, (farBot - nearBot).normalized);
+
+            Vector3 forward = (nearCenter - camPos).normalized;
+            Vector3 up      = (nearTop - nearBot).normalized;
+            Vector3 right   = Vector3.Cross(forward, up).normalized;
+            up = Vector3.Cross(right, forward).normalized;
+
+            Quaternion rotation = Quaternion.LookRotation(forward, up);
+
+            // FOV: angle subtended by top and bottom frustum edges at camera pos
+            Vector3 toTop = (nearTop - camPos).normalized;
+            Vector3 toBot = (nearBot - camPos).normalized;
+            float fovRad  = Mathf.Acos(Mathf.Clamp(Vector3.Dot(toTop, toBot), -1f, 1f));
+            float fovDeg  = fovRad * Mathf.Rad2Deg;
+
+            float nearDist = Vector3.Distance(camPos, nearCenter);
+            float farDist  = Vector3.Distance(camPos, farCenter);
+
+            float aspect = vpWidth > 0 && vpHeight > 0
+                ? (float)vpWidth / vpHeight
+                : Vector3.Distance(nearLeft, nearRight) / Vector3.Distance(nearBot, nearTop);
+
+            GameObject camGo = new GameObject("RdocCamera");
+            Camera cam = camGo.AddComponent<Camera>();
+            camGo.transform.position = camPos;
+            camGo.transform.rotation = rotation;
+            cam.fieldOfView   = fovDeg;
+            cam.nearClipPlane = Mathf.Max(0.01f, nearDist);
+            cam.farClipPlane  = Mathf.Max(nearDist + 1f, farDist);
+            cam.aspect        = aspect;
+            cam.enabled       = false;
+
+            return camGo;
+        }
+
+        private static Vector3 ClosestPointBetweenRays(
+            Vector3 p1, Vector3 d1, Vector3 p2, Vector3 d2)
+        {
+            Vector3 w = p1 - p2;
+            float a = Vector3.Dot(d1, d1);
+            float b = Vector3.Dot(d1, d2);
+            float c = Vector3.Dot(d2, d2);
+            float d = Vector3.Dot(d1, w);
+            float e = Vector3.Dot(d2, w);
+            float denom = a * c - b * b;
+            if (Mathf.Abs(denom) < 1e-8f)
+                return p1;
+            float t = (b * e - c * d) / denom;
+            float s = (a * e - b * d) / denom;
+            Vector3 closest1 = p1 + d1 * t;
+            Vector3 closest2 = p2 + d2 * s;
+            return (closest1 + closest2) * 0.5f;
+        }
+
+        private static Matrix4x4 BuildMatrix(float[] m, bool colMajor)
+        {
+            if (m == null || m.Length < 16) return Matrix4x4.identity;
+            return colMajor
+                ? new Matrix4x4(
+                    new Vector4(m[0],  m[1],  m[2],  m[3]),
+                    new Vector4(m[4],  m[5],  m[6],  m[7]),
+                    new Vector4(m[8],  m[9],  m[10], m[11]),
+                    new Vector4(m[12], m[13], m[14], m[15]))
+                : new Matrix4x4(
+                    new Vector4(m[0], m[4], m[8],  m[12]),
+                    new Vector4(m[1], m[5], m[9],  m[13]),
+                    new Vector4(m[2], m[6], m[10], m[14]),
+                    new Vector4(m[3], m[7], m[11], m[15]));
+        }
+
+        private static void ApplyMatrixToTransform(Transform t, Matrix4x4 M, bool flipZ)
+        {
+            if (flipZ)
+            {
+                Matrix4x4 F = Matrix4x4.Scale(new Vector3(1, 1, -1));
+                M = F * M * F;
+            }
+
+            Vector3 pos   = M.GetColumn(3);
+            Vector3 scale = new Vector3(
+                M.GetColumn(0).magnitude,
+                M.GetColumn(1).magnitude,
+                M.GetColumn(2).magnitude);
+
+            Matrix4x4 r = M;
+            r.SetColumn(0, ((Vector3)M.GetColumn(0)).normalized);
+            r.SetColumn(1, ((Vector3)M.GetColumn(1)).normalized);
+            r.SetColumn(2, ((Vector3)M.GetColumn(2)).normalized);
+            r.SetColumn(3, new Vector4(0, 0, 0, 1));
+
+            t.position   = pos;
+            t.rotation   = r.rotation;
+            t.localScale = scale;
+        }
+    }
+
+    // ==================================================================
+    // JSON types
+    // ==================================================================
+
+    [Serializable] internal class MatricesFile
+    {
+        public DrawEntry[] draws;
+        public CameraData camera;
+    }
+    [Serializable] internal class DrawEntry
+    {
+        public int    eid;
+        public string draw_folder;
+        public string vertex_csv;
+        public string matrix_order;
+        public InstanceEntry[] instances;
+    }
+    [Serializable] internal class InstanceEntry { public int instance_id; public float[] M; }
+    [Serializable] internal class CameraData
+    {
+        public float[] vp_matrix;
+        public int viewport_width;
+        public int viewport_height;
+    }
+}

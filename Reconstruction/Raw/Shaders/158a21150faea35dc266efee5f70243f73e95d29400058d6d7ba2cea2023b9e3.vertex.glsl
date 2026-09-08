@@ -1,0 +1,62 @@
+#version 450
+uniform vec4 _ScreenParams;
+uniform vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform vec4 hlslcc_mtx4x4glstate_matrix_projection[4];
+uniform vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform vec4 _Color;
+uniform vec4 _ClipRect;
+uniform vec4 _MainTex_ST;
+uniform float _UIMaskSoftnessX;
+uniform float _UIMaskSoftnessY;
+uniform int _UIVertexColorAlwaysGammaSpace;
+in vec4 in_POSITION0;
+in vec4 in_COLOR0;
+in vec2 in_TEXCOORD0;
+out vec4 vs_COLOR0;
+out vec2 vs_TEXCOORD0;
+out vec4 vs_TEXCOORD1;
+out vec4 vs_TEXCOORD2;
+vec4 u_xlat0;
+bvec3 u_xlatb0;
+vec4 u_xlat1;
+vec3 u_xlat16_2;
+vec3 u_xlat16_3;
+void main(){
+  (u_xlat0 = (in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1]));
+  (u_xlat0 = ((hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx) + u_xlat0));
+  (u_xlat0 = ((hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz) + u_xlat0));
+  (u_xlat0 = (u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3]));
+  (u_xlat1 = (u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1]));
+  (u_xlat1 = ((hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx) + u_xlat1));
+  (u_xlat1 = ((hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz) + u_xlat1));
+  (u_xlat0 = ((hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww) + u_xlat1));
+  (gl_Position = u_xlat0);
+  (u_xlat16_2.xyz = ((in_COLOR0.xyz * vec3(0.265885, 0.265885, 0.265885)) + vec3(0.73658401, 0.73658401, 0.73658401)));
+  (u_xlat16_2.xyz = ((in_COLOR0.xyz * u_xlat16_2.xyz) + vec3(-0.0098018404, -0.0098018404, -0.0098018404)));
+  (u_xlat16_2.xyz = ((in_COLOR0.xyz * u_xlat16_2.xyz) + vec3(0.0031969701, 0.0031969701, 0.0031969701)));
+  (u_xlat16_3.xyz = ((in_COLOR0.xyz * vec3(0.084971003, 0.084971003, 0.084971003)) + vec3(-0.00016302901, -0.00016302901, -0.00016302901)));
+  (u_xlatb0.xyz = lessThan(in_COLOR0.xyzx, vec4(0.072549, 0.072549, 0.072549, 0.0)).xyz);
+  {
+    vec3 hlslcc_movcTemp = u_xlat16_2;
+    (hlslcc_movcTemp.x = ((u_xlatb0.x) ? (u_xlat16_3.x) : (u_xlat16_2.x)));
+    (hlslcc_movcTemp.y = ((u_xlatb0.y) ? (u_xlat16_3.y) : (u_xlat16_2.y)));
+    (hlslcc_movcTemp.z = ((u_xlatb0.z) ? (u_xlat16_3.z) : (u_xlat16_2.z)));
+    (u_xlat16_2 = hlslcc_movcTemp);
+  }
+  (u_xlat1.xyz = (((int(_UIVertexColorAlwaysGammaSpace) != 0)) ? (u_xlat16_2.xyz) : (in_COLOR0.xyz)));
+  (u_xlat1.w = in_COLOR0.w);
+  (u_xlat1 = (u_xlat1 * _Color));
+  (vs_COLOR0 = u_xlat1);
+  (vs_TEXCOORD0.xy = ((in_TEXCOORD0.xy * _MainTex_ST.xy) + _MainTex_ST.zw));
+  (vs_TEXCOORD1 = in_POSITION0);
+  (u_xlat0.xy = (_ScreenParams.yy * hlslcc_mtx4x4glstate_matrix_projection[1].xy));
+  (u_xlat0.xy = ((hlslcc_mtx4x4glstate_matrix_projection[0].xy * _ScreenParams.xx) + u_xlat0.xy));
+  (u_xlat0.xy = (u_xlat0.ww / abs(u_xlat0.xy)));
+  (u_xlat0.xy = ((vec2(_UIMaskSoftnessX, _UIMaskSoftnessY) * vec2(0.25, 0.25)) + abs(u_xlat0.xy)));
+  (vs_TEXCOORD2.zw = (vec2(0.25, 0.25) / u_xlat0.xy));
+  (u_xlat0 = max(_ClipRect, vec4(-20000000000.0, -20000000000.0, -20000000000.0, -20000000000.0)));
+  (u_xlat0 = min(u_xlat0, vec4(20000000000.0, 20000000000.0, 20000000000.0, 20000000000.0)));
+  (u_xlat0.xy = ((in_POSITION0.xy * vec2(2.0, 2.0)) + (-u_xlat0.xy)));
+  (vs_TEXCOORD2.xy = ((-u_xlat0.zw) + u_xlat0.xy));
+  return ;
+}

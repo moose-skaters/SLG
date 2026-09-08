@@ -1,0 +1,167 @@
+#version 450
+uniform vec4 _MainLightPosition;
+uniform vec4 _Time;
+uniform vec3 _WorldSpaceCameraPos;
+uniform float _Timeline;
+uniform vec4 _LightColor1;
+uniform vec4 _LightColor2;
+uniform float _LightIntensity1;
+uniform float _LightIntensity2;
+layout(std140, binding = 0) uniform UnityPerMaterial{
+  vec4 _MainTex_ST;
+  vec4 _EmissionColor;
+  vec4 _Color;
+  vec4 _Fresnel_Color;
+  vec4 _Fresnel_Color_Edge;
+  vec4 _GPUSKin_TextureSize;
+  vec4 _ShadowColor;
+  float _VertexOffsetY;
+  float _MainLightOn;
+  float _MaxAddIntensity1;
+  float _EmissionIntensity;
+  float _Fresnel_Bisa;
+  float _Fresnel_Scale;
+  float _Fresnel_Intensity;
+  float _CutOff;
+  float _AlphaIsR;
+  float _Intensity;
+  float _NoMainTextureOn;
+  float _HeroDayNight_ON;
+  float _EMISSIONMAPON_BUILDING_ON;
+  float _FadeY;
+  float _AlphFadeY_ON;
+  float _Fresnel_Scale_Edge;
+  float _EMISSIONMAPON_ON;
+  float _BlinnPhongOn;
+  float _Fresnel_ON;
+  float _SheetAnimationON;
+  float _MainTexSheetAnimSpeed;
+  vec4 _MainTexSheet;
+};
+layout(location = 0) uniform sampler2D _MainTex;
+layout(location = 1) uniform sampler2D _EmissionMap;
+in vec2 vs_TEXCOORD0;
+in vec3 vs_TEXCOORD1;
+in vec4 vs_TEXCOORD2;
+in vec3 vs_TEXCOORD3;
+layout(location = 0) out vec4 SV_Target0;
+vec2 u_xlat0;
+vec3 u_xlat10_0;
+ivec3 u_xlati0;
+bool u_xlatb0;
+vec4 u_xlat16_1;
+vec4 u_xlat16_2;
+vec4 u_xlat16_3;
+vec3 u_xlat16_4;
+vec4 u_xlat5;
+bvec3 u_xlatb5;
+vec3 u_xlat16_6;
+float u_xlat7;
+bool u_xlatb7;
+vec2 u_xlat16_9;
+vec2 u_xlat14;
+bool u_xlatb14;
+float u_xlat16_16;
+vec2 u_xlat16_17;
+float u_xlat16_23;
+float u_xlat16_24;
+void main(){
+  (u_xlatb0 = (vec4(0.0, 0.0, 0.0, 0.0) != vec4(_SheetAnimationON)));
+  if (u_xlatb0)
+  {
+    (u_xlat0.x = (_Time.y * _MainTexSheetAnimSpeed));
+    (u_xlat16_1.x = (_MainTexSheet.y * _MainTexSheet.x));
+    (u_xlat7 = trunc(u_xlat16_1.x));
+    (u_xlat14.x = (u_xlat7 * u_xlat0.x));
+    (u_xlatb14 = (u_xlat14.x >= (-u_xlat14.x)));
+    (u_xlat7 = ((u_xlatb14) ? (u_xlat7) : ((-u_xlat7))));
+    (u_xlat14.x = (1.0 / u_xlat7));
+    (u_xlat0.x = (u_xlat14.x * u_xlat0.x));
+    (u_xlat0.x = fract(u_xlat0.x));
+    (u_xlat0.x = (u_xlat0.x * u_xlat7));
+    (u_xlat7 = (u_xlat0.x * _MainTexSheet.x));
+    (u_xlatb7 = (u_xlat7 >= (-u_xlat7)));
+    (u_xlat7 = ((u_xlatb7) ? (_MainTexSheet.x) : ((-_MainTexSheet.x))));
+    (u_xlat14.x = (1.0 / u_xlat7));
+    (u_xlat14.x = (u_xlat14.x * u_xlat0.x));
+    (u_xlat14.x = fract(u_xlat14.x));
+    (u_xlat7 = (u_xlat14.x * u_xlat7));
+    (u_xlati0.z = int(u_xlat7));
+    (u_xlat0.x = (u_xlat0.x / _MainTexSheet.x));
+    (u_xlat16_1.x = trunc(u_xlat0.x));
+    (u_xlat16_1.x = ((-u_xlat16_1.x) + _MainTexSheet.y));
+    (u_xlat16_1.x = (u_xlat16_1.x + -1.0));
+    (u_xlati0.x = int(u_xlat16_1.x));
+    (u_xlat16_2 = (vec4(1.0, 1.0, 1.0, 1.0) / _MainTexSheet.xyxy));
+    (u_xlat16_3.x = trunc(u_xlat7));
+    (u_xlat16_3.y = trunc(u_xlat16_1.x));
+    (u_xlati0.xy = (u_xlati0.xz + ivec2(1, 1)));
+    (u_xlat16_17.xy = vec2(u_xlati0.yx));
+    (u_xlat16_1.xy = (u_xlat16_2.xy * u_xlat16_3.xy));
+    (u_xlat0.xy = ((u_xlat16_17.xy * u_xlat16_2.zw) + (-u_xlat16_1.xy)));
+    (u_xlat0.xy = ((vs_TEXCOORD0.xy * u_xlat0.xy) + u_xlat16_1.xy));
+  }
+  else
+  {
+    (u_xlat0.xy = vs_TEXCOORD0.xy);
+  }
+  (u_xlat14.xy = ((u_xlat0.xy * _MainTex_ST.xy) + _MainTex_ST.zw));
+  (u_xlat16_1 = texture(_MainTex, u_xlat14.xy));
+  (u_xlat16_2.xyz = ((-u_xlat16_1.xyz) + vec3(1.0, 1.0, 1.0)));
+  (u_xlat16_2.xyz = ((vec3(vec3(_NoMainTextureOn, _NoMainTextureOn, _NoMainTextureOn)) * u_xlat16_2.xyz) + u_xlat16_1.xyz));
+  (u_xlat16_3 = (_Color * vec4(vec4(_Intensity, _Intensity, _Intensity, _Intensity))));
+  (u_xlat16_2.xyz = (u_xlat16_2.xyz * u_xlat16_3.xyz));
+  (u_xlat16_23 = (u_xlat16_1.w * u_xlat16_3.w));
+  (u_xlat16_3.xyz = (_LightColor1.xyz * vec3(_LightIntensity1)));
+  (u_xlat16_4.xyz = ((_LightColor2.xyz * vec3(vec3(_LightIntensity2, _LightIntensity2, _LightIntensity2))) + (-u_xlat16_3.xyz)));
+  (u_xlat16_3.xyz = ((vec3(vec3(_HeroDayNight_ON, _HeroDayNight_ON, _HeroDayNight_ON)) * u_xlat16_4.xyz) + u_xlat16_3.xyz));
+  (u_xlat16_3.xyz = (u_xlat16_2.xyz * u_xlat16_3.xyz));
+  (u_xlatb5.xyz = lessThan(vec4(0.5, 0.5, 0.5, 0.0), vec4(_BlinnPhongOn, _Fresnel_ON, _EMISSIONMAPON_ON, _BlinnPhongOn)).xyz);
+  (u_xlat16_24 = dot(_MainLightPosition.xyz, vs_TEXCOORD1.xyz));
+  (u_xlat16_24 = clamp(u_xlat16_24, 0.0, 1.0));
+  (u_xlat16_4.xyz = (vec3(u_xlat16_24) * u_xlat16_3.xyz));
+  (u_xlat16_3.xyz = ((u_xlatb5.x) ? (u_xlat16_4.xyz) : (u_xlat16_3.xyz)));
+  (u_xlat16_4.xyz = (u_xlat16_2.xyz * vs_TEXCOORD3.xyz));
+  (u_xlat16_3.xyz = ((vec3(vec3(_BlinnPhongOn, _BlinnPhongOn, _BlinnPhongOn)) * u_xlat16_4.xyz) + u_xlat16_3.xyz));
+  if (u_xlatb5.y)
+  {
+    (u_xlat5.xyw = ((-vs_TEXCOORD2.xyz) + _WorldSpaceCameraPos.xyz));
+    (u_xlat14.x = dot(u_xlat5.xyw, u_xlat5.xyw));
+    (u_xlat14.x = inversesqrt(u_xlat14.x));
+    (u_xlat5.xyw = (u_xlat14.xxx * u_xlat5.xyw));
+    (u_xlat16_9.x = dot(vs_TEXCOORD1.xyz, u_xlat5.xyw));
+    (u_xlat16_9.x = clamp(u_xlat16_9.x, 0.0, 1.0));
+    (u_xlat16_9.x = ((-u_xlat16_9.x) + 1.0));
+    (u_xlat16_16 = (u_xlat16_9.x * u_xlat16_9.x));
+    (u_xlat16_9.x = (u_xlat16_9.x * u_xlat16_16));
+    (u_xlat16_16 = (u_xlat16_9.x * u_xlat16_16));
+    (u_xlat16_9.y = ((_Fresnel_Scale * u_xlat16_16) + _Fresnel_Bisa));
+    (u_xlat16_9.x = (u_xlat16_9.x * _Fresnel_Scale_Edge));
+    (u_xlat16_9.xy = (u_xlat16_9.xy * vec2(vec2(_Fresnel_Intensity, _Fresnel_Intensity))));
+    (u_xlat16_4.xyz = (u_xlat16_9.xxx * _Fresnel_Color_Edge.xyz));
+    (u_xlat16_4.xyz = ((_Fresnel_Color.xyz * u_xlat16_9.yyy) + u_xlat16_4.xyz));
+    (u_xlat16_3.xyz = (u_xlat16_3.xyz + u_xlat16_4.xyz));
+  }
+  if (u_xlatb5.z)
+  {
+    (u_xlat10_0.xyz = texture(_EmissionMap, u_xlat0.xy).xyz);
+    (u_xlat16_4.xyz = (u_xlat10_0.xyz * _EmissionColor.xyz));
+    (u_xlat16_6.xyz = (u_xlat16_4.xyz * vec3(vec3(_EmissionIntensity, _EmissionIntensity, _EmissionIntensity))));
+    (u_xlat16_9.x = ((_Timeline * (-_EmissionIntensity)) + _EmissionIntensity));
+    (u_xlat16_4.xyz = ((u_xlat16_4.xyz * u_xlat16_9.xxx) + (-u_xlat16_6.xyz)));
+    (u_xlat16_4.xyz = ((vec3(_EMISSIONMAPON_BUILDING_ON) * u_xlat16_4.xyz) + u_xlat16_6.xyz));
+    (SV_Target0.xyz = (u_xlat16_3.xyz + u_xlat16_4.xyz));
+  }
+  else
+  {
+    (SV_Target0.xyz = u_xlat16_3.xyz);
+  }
+  (u_xlat16_9.x = (u_xlat16_23 * _Color.w));
+  (u_xlat16_2.x = ((u_xlat16_2.x * _Color.w) + (-u_xlat16_9.x)));
+  (u_xlat16_2.x = ((_AlphaIsR * u_xlat16_2.x) + u_xlat16_9.x));
+  (u_xlatb0 = (vs_TEXCOORD2.y >= _FadeY));
+  (u_xlat0.x = ((u_xlatb0) ? (1.0) : (0.0)));
+  (u_xlat16_9.x = ((u_xlat0.x * u_xlat16_2.x) + (-u_xlat16_2.x)));
+  (SV_Target0.w = ((_AlphFadeY_ON * u_xlat16_9.x) + u_xlat16_2.x));
+  return ;
+}

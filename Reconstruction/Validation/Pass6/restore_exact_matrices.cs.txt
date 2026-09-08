@@ -1,0 +1,50 @@
+// Execute as a Unity Editor C# method body after setup.cs.txt.
+// These captured affine matrices cannot safely be reconstructed with rotation/lossyScale alone.
+var root = "D:/Last-Z/Reconstruction/Validation/Pass6/";
+var parts = Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root + "matrix_decomposition.json"));
+var source = Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root + "source.json"));
+var report = new System.Collections.Generic.List<object>();
+foreach (var part in parts)
+{
+    int eid = (int)part["eid"];
+    var child = UnityEngine.GameObject.Find("EID_" + eid + "_inst0").transform;
+    string holderName = "EID_" + eid + "_ExactMatrix";
+    var holder = UnityEngine.GameObject.Find(holderName);
+    if (holder == null)
+    {
+        holder = new UnityEngine.GameObject(holderName);
+        UnityEditor.Undo.RegisterCreatedObjectUndo(holder, "Restore captured affine matrix");
+        holder.transform.SetParent(child.parent, false);
+    }
+
+    // A = U * signedScale * Vt. U and Vt are proper rotations (determinant +1).
+    // A negative determinant is preserved in signedScale, not lost in lossyScale.
+    var left = new UnityEngine.Matrix4x4();
+    var right = new UnityEngine.Matrix4x4();
+    for (int i = 0; i < 16; ++i)
+    {
+        left[i] = (float)part["left"][i];
+        right[i] = (float)part["right"][i];
+    }
+    var position = part["position"].ToObject<float[]>();
+    var scale = part["scale"].ToObject<float[]>();
+    UnityEditor.Undo.RecordObject(holder.transform, "Restore captured affine matrix");
+    holder.transform.localPosition = new UnityEngine.Vector3(position[0], position[1], position[2]);
+    holder.transform.localRotation = left.rotation;
+    holder.transform.localScale = new UnityEngine.Vector3(scale[0], scale[1], scale[2]);
+    UnityEditor.Undo.SetTransformParent(child, holder.transform, "Restore captured affine matrix");
+    UnityEditor.Undo.RecordObject(child, "Restore captured affine matrix");
+    child.localPosition = UnityEngine.Vector3.zero;
+    child.localRotation = right.rotation;
+    child.localScale = UnityEngine.Vector3.one;
+
+    var expected = source.Single(row => (int)row["eid"] == eid)["matrix"].ToObject<float[]>();
+    float maxError = 0;
+    for (int i = 0; i < 16; ++i)
+        maxError = UnityEngine.Mathf.Max(maxError, UnityEngine.Mathf.Abs(child.localToWorldMatrix[i] - expected[i]));
+    if (maxError > 0.002f)
+        throw new System.Exception("EID" + eid + " matrix mismatch; check that the import root is identity. Error=" + maxError);
+    report.Add(new { eid, maxMatrixError = maxError, parent = holderName });
+}
+UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+return report;

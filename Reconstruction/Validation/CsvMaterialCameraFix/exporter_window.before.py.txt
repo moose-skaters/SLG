@@ -1,0 +1,1022 @@
+"""
+Exporter window UI + export logic.
+"""
+
+import os
+import csv
+import json
+import struct
+import traceback
+
+import renderdoc as rd
+import qrenderdoc as qrd
+
+
+# ---------------------------------------------------------------------------
+# Vertex decode helpers (adapted from RenderDoc official decode_mesh.py)
+# ---------------------------------------------------------------------------
+
+def _unpack_data(fmt, data):
+    """Unpack one vertex attribute value from raw bytes."""
+    if fmt.Special():
+        raise RuntimeError(f"Packed/special format not supported: {fmt}")
+
+    format_chars = {}
+    format_chars[rd.CompType.UInt]    = "xBHxIxxxL"
+    format_chars[rd.CompType.SInt]    = "xbhxixxxl"
+    format_chars[rd.CompType.Float]   = "xxexfxxxd"
+    format_chars[rd.CompType.UNorm]   = format_chars[rd.CompType.UInt]
+    format_chars[rd.CompType.UScaled] = format_chars[rd.CompType.UInt]
+    format_chars[rd.CompType.SNorm]   = format_chars[rd.CompType.SInt]
+    format_chars[rd.CompType.SScaled] = format_chars[rd.CompType.SInt]
+
+    comp_type = fmt.compType
+    if comp_type not in format_chars:
+        raise RuntimeError(f"Unsupported compType: {comp_type}")
+
+    vertex_fmt = str(fmt.compCount) + format_chars[comp_type][fmt.compByteWidth]
+    value = struct.unpack_from(vertex_fmt, data, 0)
+
+    if fmt.compType == rd.CompType.UNorm:
+        divisor = float((2 ** (fmt.compByteWidth * 8)) - 1)
+        value = tuple(float(i) / divisor for i in value)
+    elif fmt.compType == rd.CompType.SNorm:
+        max_neg = -float(2 ** (fmt.compByteWidth * 8)) / 2
+        divisor = float(-(max_neg - 1))
+        value = tuple((float(i) if i == max_neg else float(i) / divisor) for i in value)
+
+    if fmt.BGRAOrder():
+        value = tuple(value[i] for i in [2, 1, 0, 3])
+
+    return value
+
+
+def _get_indices(controller, draw, ib):
+    """Return list of vertex indices for this draw."""
+    num = draw.numIndices
+    print(f"[CSVExporter] EID={draw.eventId} numIndices={num} flags={draw.flags} vertexOffset={draw.vertexOffset}")
+    if num == 0:
+        return []
+
+    # Non-indexed draw
+    if not (draw.flags & rd.ActionFlags.Indexed) or ib.resourceId == rd.ResourceId.Null():
+        return list(range(draw.vertexOffset, draw.vertexOffset + num))
+
+    # Indexed draw
+    stride = ib.byteStride
+    index_fmt = {1: 'B', 2: 'H', 4: 'I'}.get(stride, 'H')
+
+    ib_data = controller.GetBufferData(ib.resourceId, ib.byteOffset, 0)
+    byte_offset = draw.indexOffset * stride
+    indices = struct.unpack_from(str(num) + index_fmt, ib_data, byte_offset)
+    return [i + draw.baseVertex for i in indices]
+
+
+def _export_draw_vertices(controller, draw, draw_dir):
+    """
+    Export all vertex-input attributes for one draw call to a CSV file inside draw_dir.
+    Returns the CSV filename (basename only), or None on failure.
+    """
+    state = controller.GetPipelineState()
+
+    ib   = state.GetIBuffer()
+    vbs  = state.GetVBuffers()
+    attrs = state.GetVertexInputs()
+
+    if not attrs:
+        return None
+
+    # Filter out empty/invalid attrs (no name or compCount=0)
+    valid_attrs = [a for a in attrs
+                   if a.name and a.format.compCount > 0
+                   and a.vertexBuffer < len(vbs)
+                   and vbs[a.vertexBuffer].resourceId != rd.ResourceId.Null()]
+    if not valid_attrs:
+        return None
+
+    indices = _get_indices(controller, draw, ib)
+    if not indices:
+        return None
+
+    # Read each unique VB once
+    vb_cache = {}
+    for attr in valid_attrs:
+        vb = vbs[attr.vertexBuffer]
+        rid = vb.resourceId
+        if rid not in vb_cache:
+            vb_cache[rid] = controller.GetBufferData(rid, 0, 0)
+
+    # Build column names from attribute names
+    columns = []
+    for attr in valid_attrs:
+        comp_names = ['x', 'y', 'z', 'w'][:attr.format.compCount]
+        for c in comp_names:
+            columns.append(f"{attr.name}.{c}")
+
+    filename = f"eid_{draw.eventId}_verts.csv"
+    filepath = os.path.join(draw_dir, filename)
+
+    with open(filepath, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['VTX', 'IDX'] + columns)
+
+        for seq_i, idx in enumerate(indices):
+            row = [seq_i, idx]
+            for attr in valid_attrs:
+                vb = vbs[attr.vertexBuffer]
+                buf = vb_cache[vb.resourceId]
+                if attr.perInstance:
+                    offset = attr.byteOffset + vb.byteOffset
+                else:
+                    offset = attr.byteOffset + vb.byteOffset + idx * vb.byteStride
+                try:
+                    values = _unpack_data(attr.format, buf[offset:])
+                except Exception:
+                    values = (0.0,) * attr.format.compCount
+                row.extend(values)
+            writer.writerow(row)
+
+    return filename
+
+
+# ---------------------------------------------------------------------------
+# M-matrix extraction helpers
+# ---------------------------------------------------------------------------
+
+def _flatten_matrix(mat_vars, column_major):
+    flat = []
+    for v in mat_vars[:4]:
+        vals = list(v.value.f32v[:4])
+        print(f"[_flatten_matrix] var={v.name!r} f32v={vals}")
+        flat.extend(vals)
+    return flat
+
+
+def _get_cb_info(controller, stage, cbuffer_name):
+    """Return (cb_idx, buf_resource, buf_offset, cb_block) or None."""
+    pipe = controller.GetPipelineState()
+    shader_details = pipe.GetShaderReflection(stage)
+    if shader_details is None:
+        return None
+    cb_idx = next((i for i, cb in enumerate(shader_details.constantBlocks)
+                   if cb.name == cbuffer_name), None)
+    if cb_idx is None:
+        return None
+    bound_cb = pipe.GetConstantBlock(stage, cb_idx, 0)
+    return (cb_idx,
+            bound_cb.descriptor.resource,
+            bound_cb.descriptor.byteOffset,
+            shader_details.constantBlocks[cb_idx])
+
+
+def _read_matrix_from_cbuffer(controller, stage, cbuffer_name, var_path, column_major):
+    """
+    Read a 4x4 matrix from a named constant buffer.
+    var_path: dot-separated path, supports array indexing.
+              e.g. "hlslcc_mtx4x4unity_ObjectToWorld"
+              e.g. "unity_Builtins0Array[2].hlslcc_mtx4x4unity_ObjectToWorldArray"
+
+    Two strategies depending on bufferBacked:
+    - bufferBacked=True  (UBO): raw GetBufferData + stride from type.arrayByteStride
+    - bufferBacked=False (non-buffer uniforms): GetCBufferVariableContents + value.f32v
+    Returns flat list of 16 floats or None on failure.
+    """
+    import re as _re
+    import struct as _struct
+
+    info = _get_cb_info(controller, stage, cbuffer_name)
+    if info is None:
+        return None
+    cb_idx, buf_resource, buf_offset, cb_block = info
+
+    # --- Non-buffer-backed path (e.g. $Globals loose uniforms on OpenGL) ---
+    if not cb_block.bufferBacked:
+        pipe        = controller.GetPipelineState()
+        shader_det  = pipe.GetShaderReflection(stage)
+        shader_id   = pipe.GetShader(stage)
+        pipeline_id = pipe.GetGraphicsPipelineObject()
+        entry_pts   = controller.GetShaderEntryPoints(shader_id)
+        entry       = entry_pts[0].name if entry_pts else "main"
+        vars_ = controller.GetCBufferVariableContents(
+            pipeline_id, shader_det.resourceId, stage, entry,
+            cb_idx, buf_resource, buf_offset, 0)
+        parts   = var_path.split('.')
+        current = list(vars_)
+        diag    = [f"non_buf vars={len(vars_)} path={var_path!r}"]
+        for part in parts:
+            m = _re.match(r'^(.*?)\[(\d+)\]$', part)
+            if m:
+                bare, arr_idx = m.group(1), int(m.group(2))
+                found = next((v for v in current if v.name == bare or v.name == part), None)
+                diag.append(f"[{part}] found={found.name if found else None}")
+                if found is None:
+                    raise RuntimeError(f"non-buf path fail: {'; '.join(diag)}")
+                members = list(found.members) if found.members else []
+                if found.name == bare and members:
+                    if arr_idx >= len(members):
+                        raise RuntimeError(f"non-buf arr OOB {arr_idx}>={len(members)}: {'; '.join(diag)}")
+                    found = members[arr_idx]
+                current = list(found.members) if found.members else [found]
+            else:
+                found = next((v for v in current if v.name == part), None)
+                diag.append(f"[{part}] found={found.name if found else None}")
+                if found is None:
+                    raise RuntimeError(f"non-buf path fail: {'; '.join(diag)}")
+                current = list(found.members) if found.members else [found]
+        if len(current) < 4:
+            raise RuntimeError(f"non-buf final vars={len(current)} < 4: {'; '.join(diag)}")
+        floats = []
+        for row_var in current[:4]:
+            try:
+                floats.extend(list(row_var.value.f32v[:4]))
+            except Exception:
+                return None
+        return floats
+
+    # --- Buffer-backed path (UBO): raw buffer read with stride ---
+    parts = var_path.split('.')
+    current_vars = list(cb_block.variables)
+    byte_off = 0
+    cb_size  = cb_block.byteSize
+
+    for part in parts:
+        m = _re.match(r'^(.*?)\[(\d+)\]$', part)
+        if m:
+            bare, arr_idx = m.group(1), int(m.group(2))
+            found = next((v for v in current_vars if v.name == bare or v.name == part), None)
+            if found is None:
+                return None
+            type_members = list(found.type.members) if found.type.members else []
+            if found.name == bare and type_members:
+                stride = found.type.arrayByteStride
+                if stride == 0 and len(type_members) > 0:
+                    stride = cb_size // len(type_members)
+                byte_off += found.byteOffset + arr_idx * stride
+                proto = type_members[0]
+                current_vars = list(proto.type.members) if proto.type.members else [proto]
+            else:
+                byte_off += found.byteOffset
+                current_vars = list(found.type.members) if found.type.members else [found]
+        else:
+            found = next((v for v in current_vars if v.name == part), None)
+            if found is None:
+                return None
+            byte_off += found.byteOffset
+            current_vars = list(found.type.members) if found.type.members else [found]
+
+    raw = controller.GetBufferData(buf_resource, buf_offset + byte_off, 64)
+    if not raw or len(raw) < 64:
+        return None
+    return list(_struct.unpack_from('16f', raw, 0))
+
+
+def _read_instance_matrices(controller, stage, cbuffer_name, var_path_template,
+                             column_major, num_instances, instance_offset):
+    """
+    Read per-instance M matrices from an array in the cbuffer.
+    var_path_template: path with {i} for instance index,
+                       e.g. "unity_Builtins0Array[{i}].hlslcc_mtx4x4unity_ObjectToWorldArray"
+    Returns list of flat 16-float lists.
+    """
+    results = []
+    for i in range(num_instances):
+        path = var_path_template.format(i=i + instance_offset)
+        m = _read_matrix_from_cbuffer(controller, stage, cbuffer_name, path, column_major)
+        results.append(m if m is not None else [
+            1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1
+        ])
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Main export function (runs on replay thread)
+# ---------------------------------------------------------------------------
+
+def _texture_export_stem(bound, reflection, resource_name):
+    """Keep both the shader binding name and the captured resource name."""
+    safe_resource = "".join(c if c.isalnum() or c in '-_.' else '_'
+                            for c in resource_name)
+    access = getattr(bound, 'access', None)
+    index = getattr(access, 'index', -1)
+    resources = reflection.readOnlyResources if reflection is not None else []
+    # access.index addresses the reflection array, not fixedBindNumber or the
+    # texture unit. Multiple OpenGL samplers can report fixedBindNumber == 0.
+    if not (0 <= index < len(resources)):
+        return safe_resource
+    shader_resource = resources[index]
+    name = shader_resource.name
+    if not name:
+        return safe_resource
+    array_element = getattr(access, 'arrayElement', 0)
+    if shader_resource.bindArraySize > 1 or array_element > 0:
+        name += f"[{array_element}]"
+    safe_binding = "".join(c if c.isalnum() or c in '-_.' else '_' for c in name)
+    return f"{safe_binding}__{safe_resource}"
+
+
+def _export_draw_textures(controller, bound_pixel_resources, draw_dir, resource_name_map):
+    """Save all PS-bound textures for one draw call as TGA files into draw_dir."""
+    saved = []
+    reflection = controller.GetPipelineState().GetShaderReflection(rd.ShaderStage.Pixel)
+    for bound in bound_pixel_resources:
+        res_id = bound.descriptor.resource
+        if res_id == rd.ResourceId.Null():
+            continue
+        res_name = resource_name_map.get(res_id)
+        if res_name is None or 'tmp' in res_name.lower():
+            continue
+        safe_name = _texture_export_stem(bound, reflection, res_name)
+        tex_save = rd.TextureSave()
+        tex_save.resourceId = res_id
+        tex_save.alpha = rd.AlphaMapping.Preserve
+        tex_save.destType = rd.FileType.TGA
+        out_path = os.path.join(draw_dir, safe_name + ".tga")
+        if not os.path.exists(out_path):
+            controller.SaveTexture(tex_save, out_path)
+        saved.append(os.path.basename(out_path))
+    return saved
+
+
+def run_export(controller, params, progress_callback):
+    """
+    params: dict with keys:
+        eid_start, eid_end        : int
+        output_dir                : str
+        cbuffer_name              : str   (VS cbuffer containing M matrix)
+        matrix_var_path           : str   (variable path, or template with {i})
+        column_major              : bool  (True for OpenGL/GLSL)
+        instanced                 : bool
+        inst_cbuffer_name         : str   (if instanced, may differ)
+        inst_var_path_template    : str   (if instanced, e.g. "data[{i}].m")
+        export_textures           : bool  (save PS-bound textures per draw as TGA)
+        export_vp                 : bool  (export VP matrix from first draw)
+        vp_cbuffer_name           : str   (cbuffer containing VP matrix)
+        vp_var_path               : str   (variable path to VP matrix)
+    """
+    eid_start      = params['eid_start']
+    eid_end        = params['eid_end']
+    output_dir     = params['output_dir']
+    cb_name        = params['cbuffer_name']
+    mat_path       = params['matrix_var_path']
+    col_major      = params['column_major']
+    instanced      = params['instanced']
+    inst_cb        = params.get('inst_cbuffer_name', cb_name)
+    inst_template  = params.get('inst_var_path_template', mat_path + '[{i}]')
+    export_textures        = params.get('export_textures', False)
+    export_vp              = params.get('export_vp', False)
+    vp_cb_name             = params.get('vp_cbuffer_name', '$Globals')
+    vp_var_path            = params.get('vp_var_path', 'hlslcc_mtx4x4unity_MatrixVP')
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Collect all draws in range (any action that renders geometry)
+    _DRAW_FLAGS = (rd.ActionFlags.Drawcall | rd.ActionFlags.Indexed |
+                   rd.ActionFlags.MeshDispatch)
+    def collect_draws(actions, out):
+        for a in actions:
+            if eid_start <= a.eventId <= eid_end:
+                if int(a.flags) & int(_DRAW_FLAGS):
+                    out.append(a)
+                    print(f"[CSVExporter] Found draw EID={a.eventId} flags={int(a.flags)} numIndices={a.numIndices}")
+            collect_draws(a.children, out)
+
+    all_draws = []
+    collect_draws(controller.GetRootActions(), all_draws)
+
+    # Build resource name map once for texture export
+    resource_name_map = {r.resourceId: r.name for r in controller.GetResources()}
+
+    # --- Read VP matrix once from first draw ---
+    camera_data = None
+    if export_vp and all_draws:
+        try:
+            controller.SetFrameEvent(all_draws[0].eventId, True)
+            vp = _read_matrix_from_cbuffer(
+                controller, rd.ShaderStage.Vertex, vp_cb_name, vp_var_path, col_major)
+            vp_w, vp_h = 0, 0
+            try:
+                if hasattr(controller, 'GetGLPipelineState'):
+                    gl_state = controller.GetGLPipelineState()
+                    if gl_state and gl_state.rasterizer and gl_state.rasterizer.viewports:
+                        vp0 = gl_state.rasterizer.viewports[0]
+                        vp_w = int(vp0.width)
+                        vp_h = int(vp0.height)
+                elif hasattr(controller, 'GetVulkanPipelineState'):
+                    vk_state = controller.GetVulkanPipelineState()
+                    if vk_state and vk_state.viewportScissor and vk_state.viewportScissor.viewportScissors:
+                        vp0 = vk_state.viewportScissor.viewportScissors[0].vp
+                        vp_w = int(vp0.width)
+                        vp_h = int(vp0.height)
+            except Exception:
+                pass
+            camera_data = {
+                'vp_matrix': vp if vp else [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
+                'viewport_width': vp_w,
+                'viewport_height': vp_h,
+                'vp_cbuffer_name': vp_cb_name,
+                'vp_var_path': vp_var_path,
+            }
+            if vp is None:
+                camera_data['vp_error'] = f"VP var '{vp_var_path}' not found in cbuffer '{vp_cb_name}'"
+                print(f"[CSVExporter] VP matrix read failed: var not found")
+        except Exception as e:
+            print(f"[CSVExporter] VP matrix read exception: {e}")
+            traceback.print_exc()
+            camera_data = {
+                'vp_matrix': [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
+                'vp_error': f"{type(e).__name__}: {e}",
+            }
+
+    draws_data = []
+    total = len(all_draws)
+
+    for idx, draw in enumerate(all_draws):
+        if progress_callback:
+            progress_callback(idx, total, draw.eventId)
+
+        controller.SetFrameEvent(draw.eventId, True)
+
+        # Per-draw subfolder: output_dir/eid_<EID>/
+        draw_dir = os.path.join(output_dir, f"eid_{draw.eventId}")
+        os.makedirs(draw_dir, exist_ok=True)
+
+        # Collect PS-bound resources now (replay thread, after SetFrameEvent)
+        if export_textures:
+            try:
+                ps_state = controller.GetPipelineState()
+                draw_bound_ps = ps_state.GetReadOnlyResources(rd.ShaderStage.Pixel, True)
+            except Exception:
+                draw_bound_ps = []
+        else:
+            draw_bound_ps = []
+
+        # --- Export vertices ---
+        csv_error = None
+        try:
+            csv_file = _export_draw_vertices(controller, draw, draw_dir)
+        except Exception as e:
+            csv_file = None
+            csv_error = f"{type(e).__name__}: {e}\n{''.join(traceback.format_exc())}"
+
+        # --- Export M matrix ---
+        vs_stage = rd.ShaderStage.Vertex
+        num_inst = draw.numInstances if draw.numInstances > 0 else 1
+        inst_off = draw.instanceOffset
+
+        instances = []
+        try:
+            if num_inst > 1:
+                mats = _read_instance_matrices(
+                    controller, vs_stage,
+                    inst_cb, inst_template,
+                    col_major, num_inst, inst_off
+                )
+                for i, m in enumerate(mats):
+                    instances.append({'instance_id': i, 'M': m})
+            else:
+                # Try inst cbuffer first (handles numInstances=1 with instancing shader,
+                # e.g. Unity static batching where matrix is in UnityInstancing_PerDraw0[0]).
+                inst_path_0 = inst_template.format(i=inst_off)
+                m = _read_matrix_from_cbuffer(
+                    controller, vs_stage, inst_cb, inst_path_0, col_major)
+                if m is None:
+                    # Fallback: regular non-instanced cbuffer (e.g. $Globals)
+                    m = _read_matrix_from_cbuffer(
+                        controller, vs_stage, cb_name, mat_path, col_major)
+                if m is None:
+                    m = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+                instances.append({'instance_id': 0, 'M': m})
+        except Exception as e:
+            print(f"[CSVExporter] EID {draw.eventId} matrix read failed: {e}")
+            traceback.print_exc()
+            instances.append({'instance_id': 0, 'M': [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
+                               'matrix_error': f"{type(e).__name__}: {e}"})
+
+        draws_data.append({
+            'eid': draw.eventId,
+            'draw_folder': f"eid_{draw.eventId}",
+            'vertex_csv': csv_file,
+            'csv_error': csv_error,
+            'matrix_order': 'column' if col_major else 'row',
+            'instances': instances,
+        })
+
+        # --- Export textures ---
+        if export_textures:
+            try:
+                tex_names = _export_draw_textures(controller, draw_bound_ps, draw_dir, resource_name_map)
+                draws_data[-1]['textures'] = tex_names
+            except Exception as e:
+                print(f"[CSVExporter] EID {draw.eventId} texture export failed: {e}")
+                traceback.print_exc()
+                draws_data[-1]['texture_error'] = f"{type(e).__name__}: {e}"
+
+    # Write matrices.json (incremental: merge with existing data)
+    json_path = os.path.join(output_dir, 'matrices.json')
+
+    existing_draws = {}
+    existing_camera = None
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r') as f:
+                prev = json.load(f)
+            for d in prev.get('draws', []):
+                existing_draws[d['eid']] = d
+            existing_camera = prev.get('camera')
+        except Exception:
+            pass
+
+    for d in draws_data:
+        existing_draws[d['eid']] = d
+
+    merged_draws = sorted(existing_draws.values(), key=lambda d: d['eid'])
+
+    out = {
+        'export_params': {
+            'eid_start': eid_start,
+            'eid_end': eid_end,
+            'cbuffer_name': cb_name,
+            'matrix_var_path': mat_path,
+            'column_major': col_major,
+        },
+        'draws': merged_draws,
+    }
+    cam = camera_data if camera_data is not None else existing_camera
+    if cam is not None:
+        out['camera'] = cam
+    with open(json_path, 'w') as f:
+        json.dump(out, f, indent=2)
+
+    return json_path, len(draws_data)
+
+
+# ---------------------------------------------------------------------------
+# Qt UI window (PySide2 - same as other RenderDoc extensions)
+# ---------------------------------------------------------------------------
+
+from PySide2.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+                                QLineEdit, QPushButton, QComboBox, QCheckBox,
+                                QFileDialog)
+from PySide2.QtCore import Qt
+
+
+class ExporterWidget(QWidget):
+    """PySide2 widget - the actual UI."""
+
+    def __init__(self, ctx: qrd.CaptureContext):
+        super().__init__()
+        self.ctx = ctx
+        self.setWindowTitle("CSV Mesh & Matrix Exporter")
+        self.setMinimumWidth(480)
+        self._build_ui()
+
+    def _build_ui(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        # EID range
+        row1 = QHBoxLayout()
+        row1.addWidget(QLabel("EID Start:"))
+        self.eid_start = QLineEdit("0")
+        row1.addWidget(self.eid_start)
+        row1.addWidget(QLabel("EID End:"))
+        self.eid_end = QLineEdit("9999")
+        row1.addWidget(self.eid_end)
+        layout.addLayout(row1)
+
+        # Output dir
+        row2 = QHBoxLayout()
+        row2.addWidget(QLabel("Output Dir:"))
+        self.out_dir = QLineEdit("C:/rdoc_export")
+        row2.addWidget(self.out_dir)
+        btn_browse = QPushButton("...")
+        btn_browse.setFixedWidth(30)
+        btn_browse.clicked.connect(self._browse)
+        row2.addWidget(btn_browse)
+        layout.addLayout(row2)
+
+        # CBuffer name
+        row3 = QHBoxLayout()
+        row3.addWidget(QLabel("VS CBuffer Name:"))
+        self.cb_name = QLineEdit("UnityPerDraw")
+        row3.addWidget(self.cb_name)
+        layout.addLayout(row3)
+
+        # Matrix var path
+        row4 = QHBoxLayout()
+        row4.addWidget(QLabel("Matrix Var Path:"))
+        self.mat_path = QLineEdit("hlslcc_mtx4x4unity_ObjectToWorld")
+        row4.addWidget(self.mat_path)
+        layout.addLayout(row4)
+
+        # Matrix order
+        row5 = QHBoxLayout()
+        row5.addWidget(QLabel("Matrix Layout:"))
+        self.col_major = QComboBox()
+        self.col_major.addItem("Column-Major (OpenGL/Vulkan)")
+        self.col_major.addItem("Row-Major (DX)")
+        row5.addWidget(self.col_major)
+        layout.addLayout(row5)
+
+        # Instancing config (always enabled - auto-detected per draw)
+        inst_label = QLabel("Inst CBuffer (if numInstances>1):")
+        layout.addWidget(inst_label)
+
+        row7 = QHBoxLayout()
+        row7.addWidget(QLabel("Inst CBuffer:"))
+        self.inst_cb = QLineEdit("UnityInstancing_PerInstance")
+        row7.addWidget(self.inst_cb)
+        layout.addLayout(row7)
+
+        row8 = QHBoxLayout()
+        row8.addWidget(QLabel("Inst Var Template:"))
+        self.inst_tmpl = QLineEdit("unity_ObjectToWorld[{i}]")
+        row8.addWidget(self.inst_tmpl)
+        layout.addLayout(row8)
+
+        # Export textures option
+        self.chk_textures = QCheckBox("Export Textures (PS-bound, TGA)")
+        self.chk_textures.setChecked(False)
+        layout.addWidget(self.chk_textures)
+
+        # VP matrix export
+        self.chk_vp = QCheckBox("Export VP Matrix (camera)")
+        self.chk_vp.setChecked(True)
+        layout.addWidget(self.chk_vp)
+
+        row_vp1 = QHBoxLayout()
+        row_vp1.addWidget(QLabel("VP CBuffer Name:"))
+        self.vp_cb_name = QLineEdit("$Globals")
+        row_vp1.addWidget(self.vp_cb_name)
+        layout.addLayout(row_vp1)
+
+        row_vp2 = QHBoxLayout()
+        row_vp2.addWidget(QLabel("VP Var Path:"))
+        self.vp_var_path = QLineEdit("hlslcc_mtx4x4unity_MatrixVP")
+        row_vp2.addWidget(self.vp_var_path)
+        layout.addLayout(row_vp2)
+
+        # Status
+        self.status = QLabel("Ready.")
+        layout.addWidget(self.status)
+
+        # Debug buttons
+        btn_debug = QPushButton("Debug: Show Draw Info")
+        btn_debug.clicked.connect(self._on_debug)
+        layout.addWidget(btn_debug)
+
+        btn_matrix = QPushButton("Debug: Read Matrix at EID Start")
+        btn_matrix.clicked.connect(self._on_debug_matrix)
+        layout.addWidget(btn_matrix)
+
+        btn_inst_matrix = QPushButton("Debug: Read Instanced Matrix at EID Start")
+        btn_inst_matrix.clicked.connect(self._on_debug_inst_matrix)
+        layout.addWidget(btn_inst_matrix)
+
+        # Export button
+        btn_export = QPushButton("Export")
+        btn_export.clicked.connect(self._on_export)
+        layout.addWidget(btn_export)
+
+    def _browse(self):
+        d = QFileDialog.getExistingDirectory(self, "Select Output Directory")
+        if d:
+            self.out_dir.setText(d)
+
+    def _on_debug(self):
+        try:
+            eid_start = int(self.eid_start.text())
+            eid_end   = int(self.eid_end.text())
+        except ValueError:
+            self.status.setText("ERROR: EID must be integers.")
+            return
+
+        result = {}
+        status_label = self.status
+        ctx = self.ctx
+
+        def do_debug(controller):
+            lines = []
+            _DRAW_FLAGS = (rd.ActionFlags.Drawcall | rd.ActionFlags.Indexed |
+                           rd.ActionFlags.MeshDispatch)
+
+            def collect(actions):
+                for a in actions:
+                    if eid_start <= a.eventId <= eid_end:
+                        lines.append(
+                            f"EID={a.eventId} flags={int(a.flags)} "
+                            f"numIndices={a.numIndices} numInst={a.numInstances} "
+                            f"match={bool(int(a.flags) & int(_DRAW_FLAGS))}"
+                        )
+                    collect(a.children)
+
+            collect(controller.GetRootActions())
+
+            # Deep debug: check first draw's vertex inputs
+            all_draws = [a for a in controller.GetRootActions()
+                         if eid_start <= a.eventId <= eid_end
+                         and int(a.flags) & int(_DRAW_FLAGS)]
+            if not all_draws:
+                # also search children
+                def find_all(actions):
+                    found = []
+                    for a in actions:
+                        if eid_start <= a.eventId <= eid_end and int(a.flags) & int(_DRAW_FLAGS):
+                            found.append(a)
+                        found.extend(find_all(a.children))
+                    return found
+                all_draws = find_all(controller.GetRootActions())
+
+            if all_draws:
+                draw = all_draws[0]
+                controller.SetFrameEvent(draw.eventId, True)
+                state = controller.GetPipelineState()
+                ib    = state.GetIBuffer()
+                vbs   = state.GetVBuffers()
+                attrs = state.GetVertexInputs()
+                lines.append(f"--- First draw EID={draw.eventId} ---")
+                lines.append(f"attrs count={len(attrs)}")
+                lines.append(f"vbs count={len(vbs)}")
+                lines.append(f"IB resourceId={ib.resourceId} byteStride={ib.byteStride}")
+                for i, attr in enumerate(attrs):
+                    lines.append(f"  attr[{i}] name={attr.name} perInstance={attr.perInstance} "
+                                 f"vertexBuffer={attr.vertexBuffer} byteOffset={attr.byteOffset} "
+                                 f"format={attr.format.compType} x{attr.format.compCount}")
+
+            msg = "\n".join(lines) if lines else "No actions found in EID range."
+
+            def show_result():
+                status_label.setText(f"Debug done: {len(lines)} lines")
+                ctx.Extensions().MessageDialog(msg, "Debug Draw Info")
+
+            ctx.Extensions().GetMiniQtHelper().InvokeOntoUIThread(show_result)
+
+        self.ctx.Replay().AsyncInvoke('csv_debug', do_debug)
+
+    def _on_debug_matrix(self):
+        try:
+            eid = int(self.eid_start.text())
+        except ValueError:
+            self.status.setText("ERROR: EID must be integer.")
+            return
+
+        cb_name  = self.cb_name.text()
+        mat_path = self.mat_path.text()
+        ctx      = self.ctx
+        status_label = self.status
+
+        def do_matrix_debug(controller):
+            lines = []
+            try:
+                controller.SetFrameEvent(eid, True)
+                pipe  = controller.GetPipelineState()
+                stage = rd.ShaderStage.Vertex
+
+                shader_details = pipe.GetShaderReflection(stage)
+                if shader_details is None:
+                    lines.append("ERROR: No shader reflection at this EID.")
+                else:
+                    lines.append(f"Constant blocks ({len(shader_details.constantBlocks)}):")
+                    for i, cb in enumerate(shader_details.constantBlocks):
+                        lines.append(f"  [{i}] '{cb.name}'  vars={len(cb.variables)}")
+
+                    # Try to find the target cbuffer
+                    cb_idx = next((i for i, cb in enumerate(shader_details.constantBlocks)
+                                   if cb.name == cb_name), None)
+                    if cb_idx is None:
+                        lines.append(f"\nCbuffer '{cb_name}' NOT FOUND.")
+                    else:
+                        lines.append(f"\nCbuffer '{cb_name}' found at index {cb_idx}.")
+                        bound_cb     = pipe.GetConstantBlock(stage, cb_idx, 0)
+                        buf_resource = bound_cb.descriptor.resource
+                        buf_offset   = bound_cb.descriptor.byteOffset
+                        shader_id    = pipe.GetShader(stage)
+                        pipeline_id  = pipe.GetGraphicsPipelineObject()
+                        entry_points = controller.GetShaderEntryPoints(shader_id)
+                        entry = entry_points[0].name if entry_points else "main"
+
+                        vars_ = controller.GetCBufferVariableContents(
+                            pipeline_id, shader_details.resourceId, stage, entry,
+                            cb_idx, buf_resource, buf_offset, 0)
+
+                        lines.append(f"Top-level variables ({len(vars_)}):")
+                        for v in vars_:
+                            lines.append(f"  '{v.name}'  rows={v.rows} cols={v.columns}  members={len(v.members)}")
+
+                        # Navigate to mat_path
+                        parts   = mat_path.split('.')
+                        current = list(vars_)
+                        for part in parts:
+                            found = next((v for v in current if v.name == part), None)
+                            if found is None:
+                                lines.append(f"\nVariable '{part}' NOT FOUND in current level.")
+                                current = []
+                                break
+                            current = list(found.members) if found.members else [found]
+
+                        if current:
+                            lines.append(f"\nFound '{mat_path}':  {len(current)} member(s)")
+                            for i, v in enumerate(current[:4]):
+                                vals = list(v.value.f32v[:4])
+                                lines.append(f"  [{i}] {vals}")
+
+            except Exception as e:
+                lines.append(f"EXCEPTION: {e}")
+                lines.append(traceback.format_exc())
+
+            msg = "\n".join(lines)
+
+            def show():
+                status_label.setText("Matrix debug done.")
+                ctx.Extensions().MessageDialog(msg, "Matrix Debug")
+
+            ctx.Extensions().GetMiniQtHelper().InvokeOntoUIThread(show)
+
+        self.ctx.Replay().AsyncInvoke('csv_matrix_debug', do_matrix_debug)
+
+    def _on_debug_inst_matrix(self):
+        try:
+            eid = int(self.eid_start.text())
+        except ValueError:
+            self.status.setText("ERROR: EID must be integer.")
+            return
+
+        inst_cb   = self.inst_cb.text()
+        inst_tmpl = self.inst_tmpl.text()
+        col_major = (self.col_major.currentIndex() == 0)
+        ctx       = self.ctx
+        status_label = self.status
+
+        def do_debug(controller):
+            import re as _re
+            lines = []
+            try:
+                controller.SetFrameEvent(eid, True)
+                pipe  = controller.GetPipelineState()
+                stage = rd.ShaderStage.Vertex
+
+                shader_details = pipe.GetShaderReflection(stage)
+                if shader_details is None:
+                    lines.append("ERROR: No shader reflection.")
+                else:
+                    cb_idx = next((i for i, cb in enumerate(shader_details.constantBlocks)
+                                   if cb.name == inst_cb), None)
+                    if cb_idx is None:
+                        lines.append(f"Cbuffer '{inst_cb}' NOT FOUND.")
+                        lines.append("Available: " + ", ".join(cb.name for cb in shader_details.constantBlocks))
+                    else:
+                        lines.append(f"Cbuffer '{inst_cb}' found at index {cb_idx}.")
+                        bound_cb  = pipe.GetConstantBlock(stage, cb_idx, 0)
+                        cb_block  = shader_details.constantBlocks[cb_idx]
+                        lines.append(f"buf_resource={bound_cb.descriptor.resource} buf_offset={bound_cb.descriptor.byteOffset}")
+                        lines.append(f"cb_idx={cb_idx} fixedBindNumber={cb_block.fixedBindNumber} bufferBacked={cb_block.bufferBacked}")
+                        import struct as _struct
+                        raw = controller.GetBufferData(bound_cb.descriptor.resource, bound_cb.descriptor.byteOffset, 128)
+                        lines.append(f"raw bytes length={len(raw)}")
+                        if len(raw) >= 64:
+                            floats = _struct.unpack_from('16f', raw, 0)
+                            lines.append(f"raw floats[0:16]={list(floats)}")
+                        lines.append(f"Top-level vars (reflection): {[v.name for v in cb_block.variables]}")
+                        lines.append(f"cb byteSize={cb_block.byteSize}")
+
+                        # Test instances 0 and 1 — inline walk to expose failure point
+                        import re as _re2
+                        import struct as _struct2
+                        # Print arrayByteStride of unity_Builtins0Array
+                        top_var = next((v for v in cb_block.variables if v.name == 'unity_Builtins0Array'), None)
+                        if top_var:
+                            tm = list(top_var.type.members)
+                            lines.append(f"unity_Builtins0Array: byteOffset={top_var.byteOffset} arrayByteStride={top_var.type.arrayByteStride} type.members count={len(tm)}")
+                            if len(tm) > 1:
+                                lines.append(f"  members[0].byteOffset={tm[0].byteOffset}  members[1].byteOffset={tm[1].byteOffset}")
+                        for test_i in [0, 1]:
+                            path = inst_tmpl.format(i=test_i)
+                            lines.append(f"\n--- instance {test_i}, path={path!r} ---")
+                            m_result = _read_matrix_from_cbuffer(
+                                controller, stage, inst_cb, path, col_major)
+                            if m_result is None:
+                                lines.append("  result: None (path not found or read failed)")
+                                # Manual walk to find where it fails
+                                parts2 = path.split('.')
+                                cur2 = list(cb_block.variables)
+                                boff2 = 0
+                                for p2 in parts2:
+                                    mm = _re2.match(r'^(.*?)\[(\d+)\]$', p2)
+                                    if mm:
+                                        bare2, aidx2 = mm.group(1), int(mm.group(2))
+                                        f2 = next((v for v in cur2 if v.name == bare2 or v.name == p2), None)
+                                        lines.append(f"    [{p2}] found={f2.name if f2 else None}")
+                                        if f2 is None: break
+                                        tm2 = list(f2.type.members)
+                                        lines.append(f"    type.members count={len(tm2)} arrayByteStride={f2.type.arrayByteStride}")
+                                        stride2 = f2.type.arrayByteStride or (cb_block.byteSize // len(tm2) if tm2 else 0)
+                                        boff2 += f2.byteOffset + aidx2 * stride2
+                                        lines.append(f"    stride={stride2} byte_off now={boff2}")
+                                        proto2 = tm2[0]
+                                        lines.append(f"    proto members: {[v.name for v in proto2.type.members]}")
+                                        cur2 = list(proto2.type.members) if proto2.type.members else [proto2]
+                                    else:
+                                        f2 = next((v for v in cur2 if v.name == p2), None)
+                                        lines.append(f"    [{p2}] found={f2.name if f2 else None}")
+                                        if f2 is None: break
+                                        boff2 += f2.byteOffset
+                                        lines.append(f"    byteOffset={f2.byteOffset} byte_off now={boff2}")
+                                        cur2 = list(f2.type.members) if f2.type.members else [f2]
+                                raw2 = controller.GetBufferData(bound_cb.descriptor.resource, bound_cb.descriptor.byteOffset + boff2, 64)
+                                lines.append(f"    GetBufferData offset={boff2} len={len(raw2) if raw2 else 0}")
+                                if raw2 and len(raw2) >= 64:
+                                    fl2 = _struct2.unpack_from('16f', raw2, 0)
+                                    lines.append(f"    row0={list(fl2[0:4])}")
+                            else:
+                                lines.append(f"  row0: {m_result[0:4]}")
+                                lines.append(f"  row1: {m_result[4:8]}")
+                                lines.append(f"  row2: {m_result[8:12]}")
+                                lines.append(f"  row3: {m_result[12:16]}")
+
+            except Exception as e:
+                import traceback
+                lines.append(f"EXCEPTION: {e}\n{traceback.format_exc()}")
+
+            msg = "\n".join(lines)
+            def show():
+                status_label.setText("Inst matrix debug done.")
+                ctx.Extensions().MessageDialog(msg, "Instanced Matrix Debug")
+            ctx.Extensions().GetMiniQtHelper().InvokeOntoUIThread(show)
+
+        self.ctx.Replay().AsyncInvoke('csv_inst_matrix_debug', do_debug)
+
+    def _on_export(self):
+        try:
+            eid_start = int(self.eid_start.text())
+            eid_end   = int(self.eid_end.text())
+        except ValueError:
+            self.status.setText("ERROR: EID must be integers.")
+            return
+
+        col_major = (self.col_major.currentIndex() == 0)
+        export_textures = self.chk_textures.isChecked()
+        export_vp = self.chk_vp.isChecked()
+
+        params = {
+            'eid_start':              eid_start,
+            'eid_end':                eid_end,
+            'output_dir':             self.out_dir.text(),
+            'cbuffer_name':           self.cb_name.text(),
+            'matrix_var_path':        self.mat_path.text(),
+            'column_major':           col_major,
+            'instanced':              True,
+            'inst_cbuffer_name':      self.inst_cb.text(),
+            'inst_var_path_template': self.inst_tmpl.text(),
+            'export_textures':        export_textures,
+            'export_vp':              export_vp,
+            'vp_cbuffer_name':        self.vp_cb_name.text(),
+            'vp_var_path':            self.vp_var_path.text(),
+        }
+
+        self.status.setText("Exporting... (see RenderDoc log)")
+        status_label = self.status
+
+        def do_export(controller):
+            def prog(idx, total, eid):
+                pass
+            try:
+                json_path, count = run_export(controller, params, prog)
+                # Collect errors from json
+                import json as _json
+                with open(json_path) as f:
+                    data = _json.load(f)
+                errors = [(d['eid'], d['csv_error']) for d in data['draws']
+                          if d.get('csv_error')]
+                if errors:
+                    err_msg = "\n\n".join(f"EID {e}: {msg[:200]}" for e, msg in errors[:3])
+                    msg = f"Done: {count} draws, {len(errors)} CSV errors:\n{err_msg}"
+                else:
+                    msg = f"Done: {count} draws -> {params['output_dir']}"
+            except Exception as e:
+                msg = f"FAILED: {e}\n{''.join(traceback.format_exc())}"
+
+            def show():
+                status_label.setText(msg[:80])
+                ctx.Extensions().MessageDialog(msg, "Export Result")
+            ctx.Extensions().GetMiniQtHelper().InvokeOntoUIThread(show)
+
+        self.ctx.Replay().AsyncInvoke('csv_exporter', do_export)
+
+
+class ExporterWindow(qrd.CaptureViewer):
+    """CaptureViewer wrapper so RenderDoc can dock the widget."""
+
+    def __init__(self, ctx: qrd.CaptureContext, version: str):
+        super().__init__()
+        self.ctx = ctx
+        self.topWindow = ExporterWidget(ctx)
+        ctx.AddCaptureViewer(self)
+        ctx.AddDockWindow(self.topWindow, qrd.DockReference.NewFloatingArea, None)
+
+    def show(self):
+        self.ctx.RaiseDockWindow(self.topWindow)
+
+    def OnCaptureLoaded(self):  pass
+    def OnCaptureClosed(self):  pass
+    def OnSelectedEventChanged(self, event): pass
+    def OnEventChanged(self, event): pass

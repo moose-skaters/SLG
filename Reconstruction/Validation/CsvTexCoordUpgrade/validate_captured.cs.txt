@@ -1,0 +1,63 @@
+string baseDir="D:/Last-Z/Reconstruction/Validation/CsvTexCoordUpgrade";
+string assetDir="Assets/__RdocTexCoordUpgradeCheck";
+if(System.IO.Directory.Exists("D:/Last-Z/"+assetDir))throw new System.Exception("Test output already exists.");
+System.IO.Directory.CreateDirectory("D:/Last-Z/"+assetDir);
+UnityEditor.AssetDatabase.Refresh();
+var type=System.AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("RdocImporter.RdocImporterWindow")).First(t=>t!=null);
+var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+var statics=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static;
+var window=UnityEngine.ScriptableObject.CreateInstance(type);window.hideFlags=UnityEngine.HideFlags.HideAndDontSave;
+var expected=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(baseDir+"/expected.json"));
+var failures=new System.Collections.Generic.List<string>();
+int tested=0,native=0,components=0;
+float maxError=0;
+System.Action<UnityEngine.Mesh,Newtonsoft.Json.Linq.JObject,string> verify=(mesh,fixture,label)=>{
+  var channels=(Newtonsoft.Json.Linq.JObject)fixture["uvs"];
+  for(int c=0;c<8;c++){
+    var attr=(UnityEngine.Rendering.VertexAttribute)((int)UnityEngine.Rendering.VertexAttribute.TexCoord0+c);
+    var uv=channels["in_TEXCOORD"+c];
+    if(uv==null){if(mesh.HasVertexAttribute(attr))failures.Add(label+": unexpected UV"+c);continue;}
+    int dim=(int)uv["dimension"];
+    if(mesh.GetVertexAttributeDimension(attr)!=dim){failures.Add(label+": UV"+c+" dimension mismatch");continue;}
+    var values=new System.Collections.Generic.List<UnityEngine.Vector4>();mesh.GetUVs(c,values);
+    var source=(Newtonsoft.Json.Linq.JArray)uv["values"];
+    if(values.Count!=source.Count){failures.Add(label+": UV"+c+" vertex count mismatch");continue;}
+    for(int v=0;v<values.Count;v++)for(int k=0;k<dim;k++){
+      float delta=UnityEngine.Mathf.Abs(values[v][k]-(float)source[v][k]);
+      maxError=UnityEngine.Mathf.Max(maxError,delta);components++;
+      if(delta>0.000001f){failures.Add(label+": UV"+c+" component value changed");return;}
+    }
+  }
+  if(mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal) ||
+     mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Tangent) ||
+     mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Color))
+    failures.Add(label+": generated optional attribute");
+};
+try{
+ type.GetField("_csvDir",flags).SetValue(window,baseDir+"/Fixtures");
+ type.GetMethod("ScanHeaders",flags).Invoke(window,null);
+ var map=type.GetMethod("GetColumnMap",flags).Invoke(window,null);
+ foreach(Newtonsoft.Json.Linq.JObject item in expected){
+   string eid=(string)item["eid"];
+   var data=type.GetMethod("ParseCsv",statics).Invoke(null,new object[]{(string)item["csv"],map});
+   var mesh=(UnityEngine.Mesh)type.GetMethod("BuildMesh",statics).Invoke(null,new[]{data});
+   try{
+     verify(mesh,item,eid+" build");
+     var asset=(UnityEngine.Mesh)type.GetMethod("SaveFullMeshIfNeeded",statics).Invoke(null,new object[]{assetDir+"/eid_"+eid+".fbx",mesh});
+     bool needs=item["uvs"].Children<Newtonsoft.Json.Linq.JProperty>().Any(p=>(int)p.Value["dimension"]!=2);
+     if((asset!=null)!=needs)failures.Add(eid+": wrong native-mesh routing");
+     if(asset!=null){
+       native++;UnityEditor.AssetDatabase.SaveAssets();
+       string path=UnityEditor.AssetDatabase.GetAssetPath(asset);
+       string guid=UnityEditor.AssetDatabase.AssetPathToGUID(path);
+       UnityEngine.Resources.UnloadAsset(asset);
+       var loaded=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(path);
+       verify(loaded,item,eid+" reload");
+       var again=(UnityEngine.Mesh)type.GetMethod("SaveFullMeshIfNeeded",statics).Invoke(null,new object[]{assetDir+"/eid_"+eid+".fbx",mesh});
+       if(UnityEditor.AssetDatabase.AssetPathToGUID(path)!=guid)failures.Add(eid+": GUID changed");
+     }
+     tested++;
+   }finally{UnityEngine.Object.DestroyImmediate(mesh);}
+ }
+ return Newtonsoft.Json.JsonConvert.SerializeObject(new{tested,native,components,maxError,failures,passed=failures.Count==0,summary=type.GetField("_texCoordSummary",flags).GetValue(window)},Newtonsoft.Json.Formatting.Indented);
+}finally{UnityEngine.Object.DestroyImmediate(window);}

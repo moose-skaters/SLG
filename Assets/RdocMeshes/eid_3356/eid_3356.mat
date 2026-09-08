@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: eid_3356
+  m_Shader: {fileID: 4800000, guid: 63d55ae248ccb0040ade30195f39921e, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _USECAPTUREDTIME_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3275
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses:
+  - DepthOnly
+  - SHADOWCASTER
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BlendNoise:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 8, y: 8}
+        m_Offset: {x: 0.5, y: 0}
+    - _FogMask:
+        m_Texture: {fileID: 2800000, guid: 1e1b44b2132912444a1402b813ebc6bf, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FogOfWar:
+        m_Texture: {fileID: 2800000, guid: 711fe3ce50454d94885dabb7a2c1e2dd, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 5, y: 5}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaClip: 0
+    - _AlphaDisMax: 0.8
+    - _AlphaDisMin: 0.25
+    - _AlphaToMask: 0
+    - _Blend: 0
+    - _BlendOp: 0
+    - _CapturedTime: 126.32082
+    - _Cull: 2
+    - _Cutoff: 0.5
+    - _DstBlend: 10
+    - _DstBlendAlpha: 10
+    - _FogFallOff: 25
+    - _FogPowerShadow: 3
+    - _Level2: 1
+    - _Level3: 1
+    - _Level4: 0
+    - _OffsetX: 7.5
+    - _OffsetY: 0
+    - _QueueOffset: 0
+    - _SampleGI: 0
+    - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
+    - _Surface: 1
+    - _Timeline: 1
+    - _UseCapturedTime: 1
+    - _UseDepth: 1
+    - _UvScale: 0.97
+    - _ZTest: 4
+    - _ZWrite: 0
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 0}
+    - _Color: {r: 0.15131709, g: 0.1677042, b: 0.22287723, a: 1}
+    - _EdgeColor: {r: 0.050325576, g: 0.06940866, b: 0.09992069, a: 1}
+    - _FogNightShadowColor: {r: 0.01456365, g: 0.025224932, b: 0.0490081, a: 1}
+    - _FogShadowColor: {r: 0.022073662, g: 0.022073662, b: 0.022073662, a: 0.9019608}
+    - _FogShadowOffset: {r: 0, g: -0.1, b: 0.01, a: 0}
+    - _FogSpeed: {r: 0.01, g: 0, b: 0, a: 0.02}
+    - _NightColor: {r: 0.034930747, g: 0.055096004, b: 0.09065469, a: 1}
+    - _NightEdgeColor: {r: 0.11298516, g: 0.15522255, b: 0.21404114, a: 1}
+    - _NightTopColor: {r: 0.039545827, g: 0.062170528, b: 0.08908622, a: 1}
+    - _Params: {r: 0, g: 0, b: 0.0025, a: 1}
+    - _TopColor: {r: 0.17624077, g: 0.20499742, b: 0.2603273, a: 1}
+    - _VertexOffset: {r: 24, g: 0, b: -0.5, a: 0}
+  m_BuildTextureStacks: []
+--- !u!114 &6106731571797922218
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7

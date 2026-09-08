@@ -1,0 +1,44 @@
+var root="D:/Last-Z/Reconstruction/Validation/SceneLit/";
+var rows=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_materials.json"));
+var textureRows=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_textures.json"));
+var shader=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Shader>("Assets/LastZ/Shader/SceneLit.shader");
+if(shader==null||!shader.isSupported||UnityEditor.ShaderUtil.GetShaderMessages(shader).Any(x=>x.severity.ToString()=="Error"))return new{error="Shader not ready",messages=UnityEditor.ShaderUtil.GetShaderMessages(shader)};
+if(!UnityEditor.AssetDatabase.IsValidFolder("Assets/LastZ/Shader/SceneLitTextures"))UnityEditor.AssetDatabase.CreateFolder("Assets/LastZ/Shader","SceneLitTextures");
+var textures=new System.Collections.Generic.Dictionary<string,UnityEngine.Texture2D>();
+foreach(var t in textureRows){
+ int id=(int)t["id"];UnityEngine.Texture2D tex;
+ if((int)t["mips"]>1){
+  tex=new UnityEngine.Texture2D((int)t["width"],(int)t["height"],UnityEngine.TextureFormat.RGBA32,(int)t["mips"],!(bool)t["srgb"]);
+  tex.name="SceneLit_"+id+"_OriginalMips";tex.LoadRawTextureData(System.IO.File.ReadAllBytes(root+"mip_data/"+id+".rgba"));tex.Apply(false,true);
+  tex.filterMode=UnityEngine.FilterMode.Bilinear;tex.anisoLevel=0;tex.wrapMode=UnityEngine.TextureWrapMode.Repeat;
+  string path="Assets/LastZ/Shader/SceneLitTextures/Texture_"+id+".asset";var old=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>(path);
+  if(old==null)UnityEditor.AssetDatabase.CreateAsset(tex,path);else{UnityEditor.EditorUtility.CopySerialized(tex,old);UnityEngine.Object.DestroyImmediate(tex);tex=old;UnityEditor.EditorUtility.SetDirty(tex);}
+ }else{
+  string path=(string)t["path"];var imp=UnityEditor.AssetImporter.GetAtPath(path) as UnityEditor.TextureImporter;
+  imp.textureType=UnityEditor.TextureImporterType.Default;imp.sRGBTexture=(bool)t["srgb"];imp.textureCompression=UnityEditor.TextureImporterCompression.Uncompressed;imp.crunchedCompression=false;imp.alphaIsTransparency=false;imp.mipmapEnabled=false;imp.wrapMode=UnityEngine.TextureWrapMode.Repeat;imp.filterMode=UnityEngine.FilterMode.Bilinear;imp.anisoLevel=0;imp.npotScale=UnityEditor.TextureImporterNPOTScale.None;imp.SaveAndReimport();
+  tex=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>(path);
+ }
+ textures.Add("ResourceId::"+id,tex);
+}
+var renderers=UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.MeshRenderer>().Where(r=>r.gameObject.scene.IsValid()).ToArray();var report=new System.Collections.Generic.List<object>();
+foreach(var row in rows){
+ int eid=(int)row["eid"];string path="Assets/RdocMeshes/eid_"+eid+"/eid_"+eid+".mat";var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>(path);UnityEditor.Undo.RecordObject(mat,"Restore SceneLit material");mat.shader=shader;mat.shaderKeywords=new string[0];
+ foreach(var b in row["bindings"])mat.SetTexture((string)b["property_name"],textures[(string)b["resource_id"]]);
+ foreach(var prop in ((Newtonsoft.Json.Linq.JObject)row["parameters"]).Properties()){
+  var a=prop.Value.ToObject<float[]>();string name=prop.Name;
+  if(name=="_MainTex_ST"){mat.SetTextureScale("_MainTex",new UnityEngine.Vector2(a[0],a[1]));mat.SetTextureOffset("_MainTex",new UnityEngine.Vector2(a[2],a[3]));}
+  else if(mat.HasProperty(name)){if(a.Length==1)mat.SetFloat(name,a[0]);else mat.SetVector(name,new UnityEngine.Vector4(a[0],a[1],a[2],a.Length>3?a[3]:0));}
+ }
+ foreach(var prop in ((Newtonsoft.Json.Linq.JObject)row["globals"]).Properties())if(mat.HasProperty(prop.Name)){var a=prop.Value.ToObject<float[]>();if(a.Length==1)mat.SetFloat(prop.Name,a[0]);else mat.SetVector(prop.Name,new UnityEngine.Vector4(a[0],a[1],a[2],a.Length>3?a[3]:0));}
+ bool clip=(bool)row["alphaClip"];mat.SetFloat("_AlphaClip",clip?1:0);if(clip)mat.EnableKeyword("_ALPHATEST_ON");else mat.DisableKeyword("_ALPHATEST_ON");
+ bool blend=(bool)row["blend"]["enabled"];mat.SetFloat("_SrcBlend",blend?5:1);mat.SetFloat("_DstBlend",blend?10:0);mat.SetFloat("_SrcBlendAlpha",blend?5:1);mat.SetFloat("_DstBlendAlpha",blend?10:0);mat.SetFloat("_ZWrite",(bool)row["depth"]["depthWrites"]?1:0);mat.SetFloat("_Cull",(string)row["cull"]=="CullMode.NoCull"?0:2);
+ mat.renderQueue=(int)row["queue"];mat.enableInstancing=false;mat.SetOverrideTag("RenderType",blend?"Transparent":clip?"TransparentCutout":"Opaque");UnityEditor.EditorUtility.SetDirty(mat);
+ var matches=renderers.Where(r=>r.name.StartsWith("EID_"+eid+"_")).ToArray();foreach(var r in matches){UnityEditor.Undo.RecordObject(r,"Assign SceneLit material");UnityEditor.Undo.RecordObject(r.gameObject,"Show restored SceneLit object");r.sharedMaterial=mat;r.enabled=true;r.gameObject.SetActive(true);}
+ report.Add(new{eid,material=path,assigned=matches.Length,queue=mat.renderQueue,alphaClip=clip,blend,cull=mat.GetFloat("_Cull")});
+}
+// SceneSimple was previously ordered within its own group. Now interleave both groups using full EID order.
+var order=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText(root+"draw_order.json"));
+foreach(var id in new[]{496,505,514,523,532,541,1041,1050,1453,1460,1467}){var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>("Assets/RdocMeshes/eid_"+id+"/eid_"+id+".mat");UnityEditor.Undo.RecordObject(mat,"Interleave captured draw order");mat.renderQueue=(int)order[id.ToString()];UnityEditor.EditorUtility.SetDirty(mat);}
+UnityEditor.AssetDatabase.SaveAssets();UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+System.IO.File.WriteAllText(root+"material_setup.json",Newtonsoft.Json.JsonConvert.SerializeObject(report,Newtonsoft.Json.Formatting.Indented));
+return new{materialCount=report.Count,assignedCount=report.Sum(x=>(int)x.GetType().GetProperty("assigned").GetValue(x,null)),textureCount=textures.Count,messages=UnityEditor.ShaderUtil.GetShaderMessages(shader)};

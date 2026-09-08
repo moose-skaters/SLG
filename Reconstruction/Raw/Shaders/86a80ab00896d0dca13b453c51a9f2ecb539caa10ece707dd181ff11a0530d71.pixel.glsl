@@ -1,0 +1,87 @@
+#version 450
+uniform vec4 _MainLightColor;
+uniform float _Timeline;
+uniform vec4 _SSSColor;
+uniform vec4 _Color;
+uniform vec4 _NightColor;
+uniform vec4 _ShadowColor;
+uniform float _SSSIntensity;
+uniform float _Cutout;
+uniform float _ColorIntensity;
+uniform float _NightColorIntensity;
+layout(std140, binding = 0) uniform UnityPerDraw{
+  vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+  vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+  vec4 unity_LODFade;
+  vec4 unity_WorldTransformParams;
+  vec4 unity_RenderingLayer;
+  vec4 unity_LightData;
+  vec4 unity_LightIndices[2];
+  vec4 unity_ProbesOcclusion;
+  vec4 unity_SpecCube0_HDR;
+  vec4 unity_SpecCube1_HDR;
+  vec4 unity_SpecCube0_BoxMax;
+  vec4 unity_SpecCube0_BoxMin;
+  vec4 unity_SpecCube0_ProbePosition;
+  vec4 unity_SpecCube1_BoxMax;
+  vec4 unity_SpecCube1_BoxMin;
+  vec4 unity_SpecCube1_ProbePosition;
+  vec4 unity_LightmapST;
+  vec4 unity_DynamicLightmapST;
+  vec4 unity_SHAr;
+  vec4 unity_SHAg;
+  vec4 unity_SHAb;
+  vec4 unity_SHBr;
+  vec4 unity_SHBg;
+  vec4 unity_SHBb;
+  vec4 unity_SHC;
+  vec4 hlslcc_mtx4x4unity_MatrixPreviousM[4];
+  vec4 hlslcc_mtx4x4unity_MatrixPreviousMI[4];
+  vec4 unity_MotionVectorsParams;
+};
+layout(location = 0) uniform sampler2D _BaseColor_Beaf;
+layout(location = 1) uniform sampler2D _LightMap;
+in vec3 vs_TEXCOORD1;
+in vec4 vs_TEXCOORD2;
+in vec4 vs_TEXCOORD3;
+in vec4 vs_TEXCOORD5;
+in vec3 vs_TEXCOORD7;
+layout(location = 0) out vec4 SV_Target0;
+vec3 u_xlat0;
+vec4 u_xlat16_0;
+vec3 u_xlat16_1;
+vec3 u_xlat2;
+vec3 u_xlat16_3;
+vec3 u_xlat16_4;
+bool u_xlatb15;
+float u_xlat16_16;
+void main(){
+  (u_xlat16_0 = texture(_BaseColor_Beaf, vs_TEXCOORD5.zw));
+  (u_xlat16_1.x = (u_xlat16_0.w + (-_Cutout)));
+  (u_xlatb15 = (u_xlat16_1.x < 0.0));
+  if (u_xlatb15)
+  {
+    discard;
+  }
+  (u_xlat2.xyz = (vs_TEXCOORD2.www * _SSSColor.xyz));
+  (u_xlat2.xyz = (u_xlat2.xyz * vec3(vec3(_SSSIntensity, _SSSIntensity, _SSSIntensity))));
+  (u_xlat2.xyz = (u_xlat16_0.xyz * u_xlat2.xyz));
+  (u_xlat16_1.xyz = (u_xlat16_0.xyz * _Color.xyz));
+  (u_xlat16_1.xyz = (u_xlat16_1.xyz * vec3(vec3(_ColorIntensity, _ColorIntensity, _ColorIntensity))));
+  (u_xlat0.xyz = (u_xlat2.xyz * _MainLightColor.xyz));
+  (u_xlat16_3.xyz = (u_xlat16_1.xyz * _MainLightColor.xyz));
+  (u_xlat16_4.xyz = (u_xlat16_1.xyz * vs_TEXCOORD1.xyz));
+  (u_xlat2.xyz = ((u_xlat16_3.xyz * vs_TEXCOORD3.www) + u_xlat16_4.xyz));
+  (u_xlat0.xyz = ((u_xlat0.xyz * unity_LightData.zzz) + u_xlat2.xyz));
+  (u_xlat16_1.xyz = ((u_xlat16_1.xyz * vs_TEXCOORD7.xyz) + u_xlat0.xyz));
+  (u_xlat16_16 = ((-_Timeline) + 1.0));
+  (u_xlat16_3.xyz = ((_NightColor.xyz * vec3(_NightColorIntensity)) + vec3(-1.0, -1.0, -1.0)));
+  (u_xlat16_3.xyz = ((vec3(u_xlat16_16) * u_xlat16_3.xyz) + vec3(1.0, 1.0, 1.0)));
+  (u_xlat16_1.xyz = ((u_xlat16_1.xyz * u_xlat16_3.xyz) + (-_ShadowColor.xyz)));
+  (u_xlat16_0.x = texture(_LightMap, vs_TEXCOORD5.xy).x);
+  (u_xlat16_16 = (((-u_xlat16_0.x) * _ShadowColor.w) + 1.0));
+  (u_xlat16_16 = clamp(u_xlat16_16, 0.0, 1.0));
+  (SV_Target0.xyz = ((vec3(u_xlat16_16) * u_xlat16_1.xyz) + _ShadowColor.xyz));
+  (SV_Target0.w = 1.0);
+  return ;
+}

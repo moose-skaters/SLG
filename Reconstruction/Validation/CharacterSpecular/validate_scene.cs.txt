@@ -1,0 +1,21 @@
+var root="D:/Last-Z/Reconstruction/Validation/CharacterSpecular/";
+var source=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_materials.json"));
+var geometry=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_geometry.json"));
+var failures=new System.Collections.Generic.List<string>();var reports=new System.Collections.Generic.List<object>();
+foreach(var row in source){
+ int eid=(int)row["eid"];var renderer=UnityEngine.GameObject.Find("EID_"+eid+"_inst0").GetComponent<UnityEngine.MeshRenderer>();var mat=renderer.sharedMaterial;
+ foreach(var section in new[]{"parameters","globals"})foreach(var p in ((Newtonsoft.Json.Linq.JObject)row[section]).Properties()){
+  string key=p.Name=="_ReflectionMap_HDR"?"_ReflectionDecodeParams":p.Name;
+  if(!mat.HasProperty(key)||key.EndsWith("_ST"))continue;var a=p.Value.ToObject<float[]>();
+  if(a.Length==1){if(UnityEngine.Mathf.Abs(mat.GetFloat(key)-a[0])>1e-6)failures.Add(eid+":"+key);}
+  else{var v=mat.GetVector(key);for(int i=0;i<a.Length;i++)if(UnityEngine.Mathf.Abs(v[i]-a[i])>1e-6)failures.Add(eid+":"+key);}
+ }
+ var g=geometry.Single(x=>(int)x["eid"]==eid);var values=g["matrix"].ToObject<float[]>();var min=g["min"].ToObject<float[]>();var max=g["max"].ToObject<float[]>();var b=renderer.GetComponent<UnityEngine.MeshFilter>().sharedMesh.bounds;
+ float me=0,be=0;for(int c=0;c<4;c++)for(int j=0;j<4;j++)me=UnityEngine.Mathf.Max(me,UnityEngine.Mathf.Abs(renderer.localToWorldMatrix[j,c]-values[c*4+j]));
+ for(int j=0;j<3;j++)be=UnityEngine.Mathf.Max(be,UnityEngine.Mathf.Abs(b.min[j]-min[j]),UnityEngine.Mathf.Abs(b.max[j]-max[j]));
+ reports.Add(new{eid,active=renderer.gameObject.activeInHierarchy,shader=mat.shader.name,alphaClip=mat.IsKeywordEnabled("_ALPHATEST_ON"),queue=mat.renderQueue,matrixError=me,boundsError=be,decode=mat.GetVector("_ReflectionDecodeParams").ToString("F8")});UnityEditor.EditorUtility.SetDirty(mat);
+}
+UnityEditor.AssetDatabase.SaveAssets();var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();bool saved=UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+var shader=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Shader>("Assets/LastZ/Shader/CharacterSpecular.shader");
+var result=new{saved,scene=scene.path,materials=reports,parameterMismatches=failures,shaderSupported=shader.isSupported,shaderMessages=UnityEditor.ShaderUtil.GetShaderMessages(shader)};
+System.IO.File.WriteAllText(root+"final_status.json",Newtonsoft.Json.JsonConvert.SerializeObject(result,Newtonsoft.Json.Formatting.Indented));return result;

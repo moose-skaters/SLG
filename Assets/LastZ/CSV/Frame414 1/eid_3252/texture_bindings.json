@@ -1,0 +1,14 @@
+{
+  "bindings": [
+    {
+      "property_name": "_DissolveTex",
+      "filename": "_DissolveTex__Texture_4312.tga",
+      "resource_id": "ResourceId::4312"
+    },
+    {
+      "property_name": "_MainTex",
+      "filename": "_MainTex__Texture_30171.tga",
+      "resource_id": "ResourceId::30171"
+    }
+  ]
+}

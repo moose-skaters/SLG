@@ -1,0 +1,54 @@
+var type = System.AppDomain.CurrentDomain.GetAssemblies()
+    .Select(a => a.GetType("RdocImporter.RdocImporterWindow")).First(t => t != null);
+var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+var statics = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+var window = UnityEngine.ScriptableObject.CreateInstance(type);
+window.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
+var root = "D:/Last-Z/Assets/LastZ/CSV/Frame414";
+var failures = new System.Collections.Generic.List<string>();
+int total = 0, normalFiles = 0, tangentFiles = 0, uv2Files = 0;
+try {
+    type.GetField("_csvDir", flags).SetValue(window, root);
+    type.GetMethod("ScanHeaders", flags).Invoke(window, null);
+    var map = type.GetMethod("GetColumnMap", flags).Invoke(window, null);
+    var labels = (string[])type.GetField("_headerLabels", flags).GetValue(window);
+    if ((int)type.GetField("_scannedCsvCount", flags).GetValue(window) != 84)
+        failures.Add("Expected all 84 CSVs to be scanned.");
+    foreach (var file in System.IO.Directory.GetFiles(root, "*_verts.csv", System.IO.SearchOption.AllDirectories)) {
+        var header = System.IO.File.ReadLines(file).First().Split(',').Select(s => s.Trim()).ToArray();
+        bool hasN = new[]{"x","y","z"}.All(c => header.Contains("in_NORMAL0."+c));
+        bool hasT = new[]{"x","y","z","w"}.All(c => header.Contains("in_TANGENT0."+c));
+        bool hasUV2 = new[]{"x","y"}.All(c => header.Contains("in_TEXCOORD1."+c));
+        var data = type.GetMethod("ParseCsv", statics).Invoke(null, new object[]{file,map});
+        var mesh = (UnityEngine.Mesh)type.GetMethod("BuildMesh", statics).Invoke(null, new[]{data});
+        try {
+            var eid = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(file));
+            if (mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal) != hasN) failures.Add(eid+": normal presence changed");
+            if (mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Tangent) != hasT) failures.Add(eid+": tangent presence changed");
+            if (mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord1) != hasUV2) failures.Add(eid+": UV2 presence changed");
+            if (mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Color)) failures.Add(eid+": unexpected vertex color");
+            // Compare retained source values, including tangent handedness.
+            var fields = new[]{"normals","tangents","uv2s"};
+            var arrays = new System.Array[]{mesh.normals, mesh.tangents, mesh.uv2};
+            for (int j=0;j<fields.Length;j++) {
+                var source = (System.Array)data.GetType().GetField(fields[j]).GetValue(data);
+                if (source.Length != arrays[j].Length) failures.Add(eid+": "+fields[j]+" length changed");
+                else for (int k=0;k<source.Length;k++)
+                    if (!source.GetValue(k).Equals(arrays[j].GetValue(k))) { failures.Add(eid+": "+fields[j]+" value changed"); break; }
+            }
+            total++; if(hasN) normalFiles++; if(hasT) tangentFiles++; if(hasUV2) uv2Files++;
+        } finally { UnityEngine.Object.DestroyImmediate(mesh); }
+    }
+    // Explicit (none) must remain disabled even when the CSV contains normals.
+    type.GetField("_norXIdx",flags).SetValue(window,-1);
+    type.GetField("_norYIdx",flags).SetValue(window,-1);
+    type.GetField("_norZIdx",flags).SetValue(window,-1);
+    var disabledMap=type.GetMethod("GetColumnMap",flags).Invoke(window,null);
+    var disabledData=type.GetMethod("ParseCsv",statics).Invoke(null,new object[]{root+"/eid_466/eid_466_verts.csv",disabledMap});
+    var disabledMesh=(UnityEngine.Mesh)type.GetMethod("BuildMesh",statics).Invoke(null,new[]{disabledData});
+    try {
+        if(disabledMesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal)) failures.Add("Explicit none did not suppress normals.");
+        if(disabledMesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Tangent)) failures.Add("Missing tangents were generated.");
+    } finally {UnityEngine.Object.DestroyImmediate(disabledMesh);}
+    return new { total, normalFiles, tangentFiles, uv2Files, labels, failures, passed=failures.Count==0 };
+} finally {UnityEngine.Object.DestroyImmediate(window);}

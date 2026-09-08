@@ -1,0 +1,24 @@
+{
+  "bindings": [
+    {
+      "property_name": "_DetailTex",
+      "filename": "Texture_4312.tga",
+      "resource_id": "ResourceId::4312"
+    },
+    {
+      "property_name": "_MainTex",
+      "filename": "Texture_12469.tga",
+      "resource_id": "ResourceId::12469"
+    },
+    {
+      "property_name": "_ReflectionMap",
+      "filename": "Texture_6824.tga",
+      "resource_id": "ResourceId::6824"
+    },
+    {
+      "property_name": "_SepcularGloss",
+      "filename": "Texture_12468.tga",
+      "resource_id": "ResourceId::12468"
+    }
+  ]
+}

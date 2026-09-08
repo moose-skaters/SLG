@@ -1,0 +1,52 @@
+var type=System.AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("RdocImporter.RdocImporterWindow")).First(t=>t!=null);
+var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+var statics=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static;
+string csvRoot="D:/Last-Z/Assets/LastZ/CSV/Frame414";
+string folder="Assets/LastZ/Validation/CsvImporterAttributeFix";
+string absFolder=System.IO.Path.Combine(UnityEngine.Application.dataPath,"LastZ/Validation/CsvImporterAttributeFix");
+if(System.IO.Directory.Exists(absFolder)) throw new System.Exception("Validation folder already exists; refusing to overwrite.");
+var window=UnityEngine.ScriptableObject.CreateInstance(type);
+window.hideFlags=UnityEngine.HideFlags.HideAndDontSave;
+var reports=new System.Collections.Generic.List<object>();
+var failures=new System.Collections.Generic.List<string>();
+bool folderCreated=false;
+try {
+    System.IO.Directory.CreateDirectory(absFolder); folderCreated=true;
+    UnityEditor.AssetDatabase.Refresh();
+    type.GetField("_csvDir",flags).SetValue(window,csvRoot);
+    type.GetMethod("ScanHeaders",flags).Invoke(window,null);
+    var map=type.GetMethod("GetColumnMap",flags).Invoke(window,null);
+    foreach(int eid in new[]{1016,466,663,1122,1137}) {
+        var data=type.GetMethod("ParseCsv",statics).Invoke(null,new object[]{csvRoot+"/eid_"+eid+"/eid_"+eid+"_verts.csv",map});
+        var mesh=(UnityEngine.Mesh)type.GetMethod("BuildMesh",statics).Invoke(null,new[]{data});
+        var go=new UnityEngine.GameObject("EID_"+eid);
+        go.hideFlags=UnityEngine.HideFlags.HideAndDontSave;
+        try {
+            go.AddComponent<UnityEngine.MeshFilter>().sharedMesh=mesh;
+            go.AddComponent<UnityEngine.MeshRenderer>();
+            string path=folder+"/eid_"+eid+".fbx";
+            var exported=UnityEditor.Formats.Fbx.Exporter.ModelExporter.ExportObject(path,go);
+            if(string.IsNullOrEmpty(exported)) throw new System.Exception("FBX export failed for "+eid);
+            type.GetMethod("ConfigureFbxImport",statics).Invoke(null,new object[]{path,data});
+            var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(path);
+            var loaded=prefab.GetComponentInChildren<UnityEngine.MeshFilter>().sharedMesh;
+            var attrs=new[]{UnityEngine.Rendering.VertexAttribute.Normal,UnityEngine.Rendering.VertexAttribute.Tangent,UnityEngine.Rendering.VertexAttribute.TexCoord0,UnityEngine.Rendering.VertexAttribute.TexCoord1,UnityEngine.Rendering.VertexAttribute.Color};
+            foreach(var attr in attrs) if(loaded.HasVertexAttribute(attr)!=mesh.HasVertexAttribute(attr)) failures.Add(eid+": "+attr+" presence changed after FBX round trip");
+            var importer=(UnityEditor.ModelImporter)UnityEditor.AssetImporter.GetAtPath(path);
+            reports.Add(new {
+                eid,
+                normal=loaded.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal),
+                tangent=loaded.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Tangent),
+                uv2=loaded.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.TexCoord1),
+                color=loaded.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Color),
+                normalsSetting=importer.importNormals.ToString(),
+                tangentsSetting=importer.importTangents.ToString(),
+                generateSecondaryUV=importer.generateSecondaryUV
+            });
+        } finally {UnityEngine.Object.DestroyImmediate(go);UnityEngine.Object.DestroyImmediate(mesh);}
+    }
+    return new {reports,failures,passed=failures.Count==0};
+} finally {
+    UnityEngine.Object.DestroyImmediate(window);
+    // Keep the five verification FBX assets in the validation directory.
+}

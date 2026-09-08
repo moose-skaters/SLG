@@ -1,0 +1,70 @@
+var root="D:/Last-Z/Reconstruction/Validation/Pass6/";
+var rows=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source.json"));
+var textures=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"textures.json"));
+foreach(var folder in new[]{"Pass6Textures","Pass6Meshes"})if(!UnityEditor.AssetDatabase.IsValidFolder("Assets/LastZ/Shader/"+folder))UnityEditor.AssetDatabase.CreateFolder("Assets/LastZ/Shader",folder);
+var texAssets=new System.Collections.Generic.Dictionary<string,UnityEngine.Texture2D>();
+foreach(var t in textures){
+ string key=(string)t["key"];var tex=new UnityEngine.Texture2D((int)t["width"],(int)t["height"],UnityEngine.TextureFormat.RGBA32,(int)t["mips"],!(bool)t["srgb"]);
+ tex.LoadRawTextureData(System.IO.File.ReadAllBytes(root+"texture_data/"+key+".rgba"));tex.Apply(false,true);tex.name="Pass6_"+key;
+ int min=(int)t["sampler"]["filter"]["minify"],mip=(int)t["sampler"]["filter"]["mip"];tex.filterMode=min==1?UnityEngine.FilterMode.Point:mip==2?UnityEngine.FilterMode.Trilinear:UnityEngine.FilterMode.Bilinear;tex.anisoLevel=0;
+ tex.wrapModeU=(int)t["sampler"]["addressU"]==3?UnityEngine.TextureWrapMode.Clamp:UnityEngine.TextureWrapMode.Repeat;tex.wrapModeV=(int)t["sampler"]["addressV"]==3?UnityEngine.TextureWrapMode.Clamp:UnityEngine.TextureWrapMode.Repeat;
+ string path="Assets/LastZ/Shader/Pass6Textures/Texture_"+key+".asset";var old=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>(path);
+ if(old==null)UnityEditor.AssetDatabase.CreateAsset(tex,path);else{UnityEditor.EditorUtility.CopySerialized(tex,old);UnityEngine.Object.DestroyImmediate(tex);tex=old;UnityEditor.EditorUtility.SetDirty(tex);}
+ texAssets.Add(key,tex);
+}
+var renderers=UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.MeshRenderer>().Where(r=>r.gameObject.scene.IsValid()).ToArray();var report=new System.Collections.Generic.List<object>();
+foreach(var row in rows){
+ int eid=(int)row["eid"];var r=renderers.Single(x=>x.name=="EID_"+eid+"_inst0");var mf=r.GetComponent<UnityEngine.MeshFilter>();
+ var mesh=new UnityEngine.Mesh();mesh.name="Pass6_EID"+eid+"_OriginalInput";mesh.indexFormat=UnityEngine.Rendering.IndexFormat.UInt32;int n=(int)row["vertexCount"];
+ foreach(var attr in ((Newtonsoft.Json.Linq.JObject)row["attributes"]).Properties()){
+  var bytes=System.IO.File.ReadAllBytes(root+"mesh_data/"+(string)attr.Value);var f=new float[bytes.Length/4];System.Buffer.BlockCopy(bytes,0,f,0,bytes.Length);var v4=new System.Collections.Generic.List<UnityEngine.Vector4>();for(int i=0;i<n;i++)v4.Add(new UnityEngine.Vector4(f[4*i],f[4*i+1],f[4*i+2],f[4*i+3]));
+  string a=attr.Name;
+  if(a=="in_POSITION0")mesh.vertices=v4.Select(v=>new UnityEngine.Vector3(v.x,v.y,v.z)).ToArray();
+  else if(a=="in_NORMAL0")mesh.normals=v4.Select(v=>new UnityEngine.Vector3(v.x,v.y,v.z)).ToArray();
+  else if(a=="in_TANGENT0")mesh.tangents=v4.ToArray();
+  else if(a=="in_COLOR0")mesh.colors=v4.Select(v=>new UnityEngine.Color(v.x,v.y,v.z,v.w)).ToArray();
+  else if(a.StartsWith("in_TEXCOORD"))mesh.SetUVs(int.Parse(a.Substring(11)),v4);
+ }
+ var ib=System.IO.File.ReadAllBytes(root+"mesh_data/"+(string)row["indices"]);var tri=new int[ib.Length/4];System.Buffer.BlockCopy(ib,0,tri,0,ib.Length);mesh.SetIndices(tri,UnityEngine.MeshTopology.Triangles,0);mesh.RecalculateBounds();
+ string meshPath="Assets/LastZ/Shader/Pass6Meshes/EID_"+eid+".asset";var oldMesh=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(meshPath);if(oldMesh==null)UnityEditor.AssetDatabase.CreateAsset(mesh,meshPath);else{UnityEditor.EditorUtility.CopySerialized(mesh,oldMesh);UnityEngine.Object.DestroyImmediate(mesh);mesh=oldMesh;UnityEditor.EditorUtility.SetDirty(mesh);}
+ UnityEditor.Undo.RecordObject(mf,"Restore exact draw attributes");mf.sharedMesh=mesh;
+ var m=new UnityEngine.Matrix4x4();var aM=row["matrix"].ToObject<float[]>();for(int i=0;i<16;i++)m[i]=aM[i];
+ var parent=r.transform.parent;var local=parent==null?m:parent.worldToLocalMatrix*m;UnityEditor.Undo.RecordObject(r.transform,"Restore captured object matrix");
+ r.transform.localPosition=local.GetColumn(3);r.transform.localRotation=local.rotation;r.transform.localScale=local.lossyScale;
+ string matPath="Assets/RdocMeshes/eid_"+eid+"/eid_"+eid+".mat";var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>(matPath);if(mat==null)throw new System.Exception("Missing "+matPath);
+ string family=(string)row["family"];var shader=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Shader>("Assets/LastZ/Shader/"+family+".shader");if(shader==null||!shader.isSupported)throw new System.Exception("Shader not ready "+family);
+ UnityEditor.Undo.RecordObject(mat,"Restore Pass6 material");mat.shader=shader;mat.shaderKeywords=new string[0];
+ foreach(var b in row["bindings"]){string prop=(string)b["property_name"];if(b["assetKey"]!=null&&mat.HasProperty(prop))mat.SetTexture(prop,texAssets[(string)b["assetKey"]]);}
+ foreach(var section in new[]{"params","globals"})foreach(var p in ((Newtonsoft.Json.Linq.JObject)row[section]).Properties()){
+  string key=p.Name;var a=p.Value.ToObject<float[]>();if(a.Length==0)continue;
+  if(key.EndsWith("_ST")&&!mat.HasProperty(key)){string tex=key.Substring(0,key.Length-3);if(mat.HasProperty(tex)){mat.SetTextureScale(tex,new UnityEngine.Vector2(a[0],a[1]));mat.SetTextureOffset(tex,new UnityEngine.Vector2(a[2],a[3]));}}
+  else if(mat.HasProperty(key)){if(a.Length==1)mat.SetFloat(key,a[0]);else{var v=UnityEngine.Vector4.zero;for(int j=0;j<a.Length&&j<4;j++)v[j]=a[j];mat.SetVector(key,v);}}
+ }
+ int program=(int)row["program"];bool clip=program==7527;if(mat.HasProperty("_AlphaClip")){mat.SetFloat("_AlphaClip",clip?1:0);if(clip)mat.EnableKeyword("_ALPHATEST_ON");}
+ if(family=="GeneralVFX")mat.SetFloat("_Variant",program==31699?0:program==7836?1:program==23419?2:program==7831?3:4);
+ if(family=="FogOfWar")mat.SetFloat("_UseDepth",eid==3356?1:0);
+ if(family=="Ground")mat.SetFloat("_ScreenSpecOn",0);
+ if(mat.HasProperty("_CaptureTime"))mat.SetFloat("_CaptureTime",126.320823669434f);
+ if(mat.HasProperty("_UseCaptureTime"))mat.SetFloat("_UseCaptureTime",1);
+ if(mat.HasProperty("_CapturedTime"))mat.SetFloat("_CapturedTime",126.320823669434f);
+ if(mat.HasProperty("_UseCapturedTime"))mat.SetFloat("_UseCapturedTime",1);
+ if(mat.HasProperty("_TextureMipBias")&&row["globals"]["_GlobalMipBias"]!=null)mat.SetFloat("_TextureMipBias",(float)row["globals"]["_GlobalMipBias"][0]);
+ bool blend=(bool)row["blend"]["enabled"];var bstate=row["blend"];
+ var factors=new System.Collections.Generic.Dictionary<string,int>{{"BlendMultiplier.One",1},{"BlendMultiplier.Zero",0},{"BlendMultiplier.SrcAlpha",5},{"BlendMultiplier.InvSrcAlpha",10}};
+ foreach(var pair in new[]{new[]{"_SrcBlend","colorBlend","source"},new[]{"_DstBlend","colorBlend","destination"},new[]{"_SrcBlendAlpha","alphaBlend","source"},new[]{"_DstBlendAlpha","alphaBlend","destination"}})if(mat.HasProperty(pair[0]))mat.SetFloat(pair[0],blend?factors[(string)bstate[pair[1]][pair[2]]]:pair[2]=="source"?1:0);
+ if(mat.HasProperty("_ZWrite"))mat.SetFloat("_ZWrite",0);
+ if(mat.HasProperty("_Cull"))mat.SetFloat("_Cull",(string)row["cull"]=="CullMode.NoCull"?0:2);
+ if(mat.HasProperty("_ZTest"))mat.SetFloat("_ZTest",(string)row["depth"]["depthFunction"]=="CompareFunction.AlwaysTrue"?8:4);
+ mat.renderQueue=(int)row["queue"];mat.SetOverrideTag("RenderType",blend?"Transparent":"Opaque");mat.enableInstancing=false;UnityEditor.EditorUtility.SetDirty(mat);
+ UnityEditor.Undo.RecordObject(r,"Assign Pass6 material");UnityEditor.Undo.RecordObject(r.gameObject,"Enable restored Pass6 object");r.sharedMaterial=mat;r.enabled=true;r.gameObject.SetActive(true);
+ float matrixError=0;for(int i=0;i<16;i++)matrixError=UnityEngine.Mathf.Max(matrixError,UnityEngine.Mathf.Abs(r.localToWorldMatrix[i]-aM[i]));
+ report.Add(new{eid,family,material=matPath,mesh=meshPath,vertexCount=n,indexCount=tri.Length,matrixError,queue=mat.renderQueue});
+}
+// Place first colour pass before the depth snapshot; preserve unique per-draw order and original Blend/ZWrite.
+var first=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("D:/Last-Z/Reconstruction/Validation/SceneLit/draw_order.json"));
+foreach(var p in first.Properties()){int id=int.Parse(p.Name);var path="Assets/RdocMeshes/eid_"+id+"/eid_"+id+".mat";string backup=root+"backup/eid_"+id+".mat.txt";if(!System.IO.File.Exists(backup))System.IO.File.Copy("D:/Last-Z/"+path,backup);
+ var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>(path);UnityEditor.Undo.RecordObject(mat,"Place first pass before CopyDepth");mat.renderQueue=2001+(int)p.Value-3000;UnityEditor.EditorUtility.SetDirty(mat);}
+var ground=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>("Assets/RdocMeshes/eid_466/eid_466.mat");ground.SetFloat("_ScreenSpecOn",1);ground.renderQueue=2000;UnityEditor.EditorUtility.SetDirty(ground);
+UnityEditor.AssetDatabase.SaveAssets();UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+System.IO.File.WriteAllText(root+"setup_result.json",Newtonsoft.Json.JsonConvert.SerializeObject(report,Newtonsoft.Json.Formatting.Indented));
+return new{draws=report.Count,textures=texAssets.Count,maxMatrixError=report.Max(x=>(float)x.GetType().GetProperty("matrixError").GetValue(x,null))};

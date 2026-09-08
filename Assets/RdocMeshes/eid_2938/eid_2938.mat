@@ -1,0 +1,101 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: eid_2938
+  m_Shader: {fileID: 4800000, guid: 2a7754ceefc192d408b22445f873b8a7, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3232
+  stringTagMap:
+    RenderType: Transparent
+  disabledShaderPasses:
+  - DepthOnly
+  - SHADOWCASTER
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: d2536f909bc9d204aa60fbd607fcf3f1, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 2800000, guid: 841f5a171f15421449d0ee90aa12cc42, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 29639627a06d0f04f9231058025af548, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphFadeY_ON: 0
+    - _AlphaClip: 0
+    - _AlphaIsR: 0
+    - _AlphaToMask: 0
+    - _Blend: 0
+    - _BlendOp: 0
+    - _BlinnPhongOn: 0
+    - _Cull: 2
+    - _CutOff: 0.5
+    - _Cutoff: 0.5
+    - _DstBlend: 10
+    - _DstBlendAlpha: 10
+    - _EMISSIONMAPON_BUILDING_ON: 1
+    - _EMISSIONMAPON_ON: 0
+    - _EmissionIntensity: 1
+    - _FadeY: 0
+    - _Fresnel_Bisa: 0
+    - _Fresnel_Intensity: 0
+    - _Fresnel_ON: 0
+    - _Fresnel_Scale: 0
+    - _Fresnel_Scale_Edge: 0
+    - _HeroDayNight_ON: 0
+    - _Intensity: 1
+    - _LightIntensity1: 1.0031738
+    - _LightIntensity2: 1.0000479
+    - _MainTexSheetAnimSpeed: 1
+    - _NoMainTextureOn: 0
+    - _QueueOffset: 0
+    - _SampleGI: 0
+    - _SheetAnimationON: 0
+    - _SrcBlend: 5
+    - _SrcBlendAlpha: 5
+    - _Surface: 1
+    - _Timeline: 1
+    - _VertexOffsetY: 0
+    - _ZWrite: 0
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Fresnel_Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Fresnel_Color_Edge: {r: 0, g: 0, b: 0, a: 0}
+    - _LightColor1: {r: 0.9999865, g: 0.99998784, b: 0.99999547, a: 1}
+    - _LightColor2: {r: 0.9999902, g: 0.99999297, b: 1, a: 1}
+    - _MainTexSheet: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+--- !u!114 &414509656157703684
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7

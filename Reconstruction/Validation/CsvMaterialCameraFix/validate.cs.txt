@@ -1,0 +1,35 @@
+var root=UnityEngine.GameObject.Find("RdocImport");
+var camera=root.GetComponentInChildren<UnityEngine.Camera>(true);
+camera.GetComponent<RdocCameraSettings>().Apply();
+var json=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("D:/Last-Z/Reconstruction/Validation/CsvMaterialCameraFix/camera_points.json"));
+var a=json["vp"].ToObject<float[]>();var vp=new UnityEngine.Matrix4x4();
+for(int c=0;c<4;c++)for(int r=0;r<4;r++)vp[r,c]=a[c*4+r];
+var restored=camera.projectionMatrix*camera.worldToCameraMatrix;
+float maxPixelError=0f; int samples=0;
+foreach(var token in json["points"]){
+ var p=token["world"].ToObject<float[]>();var world=new UnityEngine.Vector4(p[0],p[1],p[2],1);
+ var expected=vp*world;var actual=restored*world;
+ float dx=(expected.x/expected.w-actual.x/actual.w)*360;
+ float dy=(expected.y/expected.w-actual.y/actual.w)*640;
+ maxPixelError=UnityEngine.Mathf.Max(maxPixelError,UnityEngine.Mathf.Sqrt(dx*dx+dy*dy));samples++;
+}
+var failures=new System.Collections.Generic.List<string>();int colorCount=0,drawCount=0,fbxRemaps=0;
+foreach(string dir in System.IO.Directory.GetDirectories("D:/Last-Z/Assets/LastZ/CSV/Frame414","eid_*")){
+ string eid=System.IO.Path.GetFileName(dir);string assetDir="Assets/RdocMeshes/"+eid;
+ var material=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>(assetDir+"/"+eid+".mat");
+ if(material==null){failures.Add(eid+": missing material");continue;}drawCount++;
+ var bindings=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText(dir+"/texture_bindings.json"))["bindings"];
+ var binding=bindings.FirstOrDefault(b=>(string)b["property_name"]=="_BaseMap")??bindings.FirstOrDefault(b=>(string)b["property_name"]=="_MainTex");
+ if(binding!=null){
+   string expected=assetDir+"/"+(string)binding["filename"];
+   if(UnityEditor.AssetDatabase.GetAssetPath(material.mainTexture)!=expected)failures.Add(eid+": wrong color texture");
+   else colorCount++;
+ }
+ var prefab=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(assetDir+"/"+eid+"_verts.fbx");
+ if(prefab.GetComponentsInChildren<UnityEngine.Renderer>(true).All(r=>r.sharedMaterials.All(m=>m==material)))fbxRemaps++;
+ else failures.Add(eid+": FBX still uses a different material");
+}
+var report=new {drawCount,colorCount,fbxRemaps,samples,maxPixelError,children=root.transform.childCount,cameraEnabled=camera.enabled,cameraPosition=camera.transform.position.ToString("F6"),fov=camera.fieldOfView,aspect=camera.aspect,failures,passed=failures.Count==0&&maxPixelError<0.05f};
+string output=Newtonsoft.Json.JsonConvert.SerializeObject(report,Newtonsoft.Json.Formatting.Indented);
+System.IO.File.WriteAllText("D:/Last-Z/Reconstruction/Validation/CsvMaterialCameraFix/results.json",output);
+return output;

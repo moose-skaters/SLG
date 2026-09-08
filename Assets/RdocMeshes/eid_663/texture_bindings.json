@@ -1,0 +1,14 @@
+{
+  "bindings": [
+    {
+      "property_name": "_EmissionMap",
+      "filename": "Texture_23207.tga",
+      "resource_id": "ResourceId::23207"
+    },
+    {
+      "property_name": "_MainTex",
+      "filename": "Texture_23179.tga",
+      "resource_id": "ResourceId::23179"
+    }
+  ]
+}

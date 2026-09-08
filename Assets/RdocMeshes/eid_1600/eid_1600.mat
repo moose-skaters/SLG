@@ -1,0 +1,145 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: eid_1600
+  m_Shader: {fileID: 4800000, guid: 25d6a951fa8c3f44fbee22935975810c, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _WORLDUVON_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3100
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BaseNormal:
+        m_Texture: {fileID: 2800000, guid: 97a530d8ed23edd44a5eaca96040cc4a, type: 2}
+        m_Scale: {x: 4, y: 4}
+        m_Offset: {x: 0, y: 0}
+    - _Control:
+        m_Texture: {fileID: 2800000, guid: 3f9f53bd3fdfc754f926ec8b0fa3732a, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMask:
+        m_Texture: {fileID: 2800000, guid: 48278cdd2d37e06429a5a62373f36684, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _PlaneBlurShadowMap:
+        m_Texture: {fileID: 2800000, guid: cf8e52fac4a33584cbc079c3e76f2c2b, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SparkMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecMaskMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Splat0:
+        m_Texture: {fileID: 2800000, guid: 910d7dc46a5578a4991dab3cbc0af68a, type: 2}
+        m_Scale: {x: 25, y: 30}
+        m_Offset: {x: -1, y: -0.37}
+    - _Splat1:
+        m_Texture: {fileID: 2800000, guid: 91fb07873d18b924ea571bbff5dec079, type: 2}
+        m_Scale: {x: 20, y: 30}
+        m_Offset: {x: 0, y: 0}
+    - _Splat2:
+        m_Texture: {fileID: 2800000, guid: 91fb07873d18b924ea571bbff5dec079, type: 2}
+        m_Scale: {x: 30, y: 30}
+        m_Offset: {x: 0, y: 0}
+    - _Splat3:
+        m_Texture: {fileID: 2800000, guid: 91fb07873d18b924ea571bbff5dec079, type: 2}
+        m_Scale: {x: 45, y: 45}
+        m_Offset: {x: 0, y: 0}
+    - _Splat_Golobal:
+        m_Texture: {fileID: 2800000, guid: 19bae86424eba6e45b7f4fdb1dbbc275, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaClip: 0
+    - _AlphaScale: 0
+    - _AlphaToMask: 0
+    - _BaseNormalScale: 0
+    - _Blend: 0
+    - _BlendOp: 0
+    - _BlurPlaneShadowOn: 0
+    - _Color_Splat1_Intensity: 0.79
+    - _Color_Splat2_Intensity: 1.41
+    - _Color_Splat3_Intensity: 1.13
+    - _Color_Splat4_Intensity: 1.19
+    - _Cull: 2
+    - _Cutoff: 0.5
+    - _DstBlend: 0
+    - _DstBlendAlpha: 0
+    - _FakeNormalChannel: 0
+    - _FakeNormalOn: 0
+    - _FlipScreenMaskY: 0
+    - _HeightBlendOn: 0
+    - _LightColorDesat: 0.3
+    - _MaxHeight: -5
+    - _MinHeight: -2
+    - _NormalMaxHeight: 1000
+    - _NormalMinHeight: 0
+    - _QueueOffset: 0
+    - _SampleGI: 0
+    - _ScreenSpecOn: 0
+    - _SparkColorIntensity: 0.01
+    - _SrcBlend: 1
+    - _SrcBlendAlpha: 1
+    - _Surface: 0
+    - _TextureMipBias: -0.5849625
+    - _Weight: 0.2
+    - _WorldUVON: 1
+    - _ZWrite: 1
+    - _specScale: 0.05
+    m_Colors:
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BlurPlaneShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color_Golobal: {r: 1, g: 1, b: 1, a: 1}
+    - _Color_Splat1: {r: 0.62319374, g: 0.62319374, b: 0.62319374, a: 0.8}
+    - _Color_Splat2: {r: 0.45579708, g: 0.46066317, b: 0.5754442, a: 0}
+    - _Color_Splat3: {r: 0.50074744, g: 0.50074744, b: 0.50074744, a: 0}
+    - _Color_Splat4: {r: 0.5271152, g: 0.45078585, b: 0.52373654, a: 0}
+    - _EdgeColor01: {r: 0, g: 0, b: 0, a: 0}
+    - _FakeNormalDir: {r: 0.001, g: 0, b: 0, a: 0}
+    - _SparkColor: {r: 1, g: 1, b: 1, a: 1}
+    - _WorldEdge: {r: 512, g: 512, b: 67.5, a: 120}
+    - _specColor: {r: 1, g: 0.6753919, b: 0.32777813, a: 1}
+  m_BuildTextureStacks: []
+--- !u!114 &353673047934880907
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 7

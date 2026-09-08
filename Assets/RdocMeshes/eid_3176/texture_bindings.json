@@ -1,0 +1,24 @@
+{
+  "bindings": [
+    {
+      "property_name": "_Diss_Tex",
+      "filename": "_Diss_Tex__Texture_7171.tga",
+      "resource_id": "ResourceId::7171"
+    },
+    {
+      "property_name": "_Fire_Tex",
+      "filename": "_Fire_Tex__Texture_23500.tga",
+      "resource_id": "ResourceId::23500"
+    },
+    {
+      "property_name": "_Main_Tex",
+      "filename": "_Main_Tex__Texture_23500.tga",
+      "resource_id": "ResourceId::23500"
+    },
+    {
+      "property_name": "_Mask_Tex",
+      "filename": "_Mask_Tex__Texture_6921.tga",
+      "resource_id": "ResourceId::6921"
+    }
+  ]
+}

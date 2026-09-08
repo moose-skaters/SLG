@@ -1,0 +1,32 @@
+var root="D:/Last-Z/Reconstruction/Validation/CharacterSpecular/";var rows=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_materials.json"));var inputs=Newtonsoft.Json.Linq.JArray.Parse(System.IO.File.ReadAllText(root+"source_textures.json"));
+var shader=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Shader>("Assets/LastZ/Shader/CharacterSpecular.shader");if(shader==null||!shader.isSupported)return "Shader not ready";
+if(!UnityEditor.AssetDatabase.IsValidFolder("Assets/LastZ/Shader/CharacterSpecularTextures"))UnityEditor.AssetDatabase.CreateFolder("Assets/LastZ/Shader","CharacterSpecularTextures");
+var textures=new System.Collections.Generic.Dictionary<string,UnityEngine.Texture>();
+foreach(var t in inputs){
+ int id=(int)t["id"];var res=t["resource"];UnityEngine.Texture texture;
+ bool srgb=((string)res["format"]).Contains("SRGB");int width=(int)res["width"],mips=(int)res["mip_levels"];
+ if(((string)res["dimension"]).Contains("Cube")){
+  var cube=new UnityEngine.Cubemap(width,UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB,UnityEngine.Experimental.Rendering.TextureCreationFlags.MipChain,mips);
+  for(int face=0;face<6;face++)for(int mip=0;mip<mips;mip++)cube.SetPixelData<byte>(System.IO.File.ReadAllBytes(root+"mip_data/"+id+"_face"+face+"_mip"+mip+".rgba"),mip,(UnityEngine.CubemapFace)face,0);
+  cube.Apply(false,true);cube.filterMode=UnityEngine.FilterMode.Trilinear;cube.wrapMode=UnityEngine.TextureWrapMode.Clamp;texture=cube;
+ }else{
+  var tex=new UnityEngine.Texture2D(width,(int)res["height"],UnityEngine.TextureFormat.RGBA32,mips,!srgb);tex.LoadRawTextureData(System.IO.File.ReadAllBytes(root+"mip_data/"+id+".rgba"));tex.Apply(false,true);tex.filterMode=UnityEngine.FilterMode.Bilinear;tex.wrapMode=UnityEngine.TextureWrapMode.Repeat;texture=tex;
+ }
+ texture.name="CharacterSpecular_"+id+"_OriginalMips";texture.anisoLevel=0;string path="Assets/LastZ/Shader/CharacterSpecularTextures/Texture_"+id+".asset";var existing=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture>(path);
+ if(existing==null)UnityEditor.AssetDatabase.CreateAsset(texture,path);else{UnityEditor.EditorUtility.CopySerialized(texture,existing);UnityEngine.Object.DestroyImmediate(texture);texture=existing;UnityEditor.EditorUtility.SetDirty(texture);}
+ textures.Add("ResourceId::"+id,texture);
+}
+var order=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("D:/Last-Z/Reconstruction/Validation/SceneLit/draw_order.json"));var renderers=UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.MeshRenderer>().Where(r=>r.gameObject.scene.IsValid()).ToArray();var report=new System.Collections.Generic.List<object>();
+foreach(var row in rows){
+ int eid=(int)row["eid"];var mat=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Material>("Assets/RdocMeshes/eid_"+eid+"/eid_"+eid+".mat");UnityEditor.Undo.RecordObject(mat,"Restore CharacterSpecular material");mat.shader=shader;mat.shaderKeywords=new string[0];
+ foreach(var b in row["bindings"])mat.SetTexture((string)b["property_name"],textures[(string)b["resource_id"]]);
+ foreach(var section in new[]{"parameters","globals"})foreach(var p in ((Newtonsoft.Json.Linq.JObject)row[section]).Properties()){
+  var a=p.Value.ToObject<float[]>();string name=p.Name=="_ReflectionMap_HDR"?"_ReflectionDecodeParams":p.Name;
+  if(name.EndsWith("_ST")){string property=name.Substring(0,name.Length-3);if(mat.HasProperty(property)){mat.SetTextureScale(property,new UnityEngine.Vector2(a[0],a[1]));mat.SetTextureOffset(property,new UnityEngine.Vector2(a[2],a[3]));}}
+  else if(mat.HasProperty(name)){if(a.Length==1)mat.SetFloat(name,a[0]);else mat.SetVector(name,new UnityEngine.Vector4(a[0],a[1],a[2],a.Length>3?a[3]:0));}
+ }
+ bool hair=(bool)row["hair"];mat.SetFloat("_AlphaClip",hair?1:0);if(hair)mat.EnableKeyword("_ALPHATEST_ON");mat.SetOverrideTag("RenderType",hair?"TransparentCutout":"Opaque");mat.renderQueue=(int)order[eid.ToString()];mat.enableInstancing=false;UnityEditor.EditorUtility.SetDirty(mat);
+ var r=renderers.Single(x=>x.name=="EID_"+eid+"_inst0");UnityEditor.Undo.RecordObject(r,"Assign CharacterSpecular material");UnityEditor.Undo.RecordObject(r.gameObject,"Show CharacterSpecular object");r.sharedMaterial=mat;r.enabled=true;r.gameObject.SetActive(true);
+ report.Add(new{eid,hair,queue=mat.renderQueue,material=UnityEditor.AssetDatabase.GetAssetPath(mat),active=r.gameObject.activeInHierarchy});
+}
+UnityEditor.AssetDatabase.SaveAssets();UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());System.IO.File.WriteAllText(root+"material_setup.json",Newtonsoft.Json.JsonConvert.SerializeObject(report,Newtonsoft.Json.Formatting.Indented));return new{materials=report,textures=textures.Count,messages=UnityEditor.ShaderUtil.GetShaderMessages(shader)};

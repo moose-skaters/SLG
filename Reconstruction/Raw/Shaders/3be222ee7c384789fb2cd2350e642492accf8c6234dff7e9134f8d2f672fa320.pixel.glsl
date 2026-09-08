@@ -1,0 +1,75 @@
+#version 450
+uniform vec4 _Time;
+uniform float _FaceUVSpeedX;
+uniform float _FaceUVSpeedY;
+uniform vec4 _FaceColor;
+uniform float _OutlineSoftness;
+uniform float _OutlineUVSpeedX;
+uniform float _OutlineUVSpeedY;
+uniform vec4 _OutlineColor;
+uniform float _OutlineWidth;
+uniform float _ScaleRatioA;
+layout(location = 0) uniform sampler2D _MainTex;
+layout(location = 1) uniform sampler2D _FaceTex;
+layout(location = 2) uniform sampler2D _OutlineTex;
+in vec4 vs_COLOR0;
+in vec2 vs_TEXCOORD0;
+in vec4 vs_TEXCOORD1;
+in vec4 vs_TEXCOORD5;
+layout(location = 0) out vec4 SV_Target0;
+vec3 u_xlat0;
+vec4 u_xlat16_0;
+float u_xlat16_1;
+vec4 u_xlat2;
+vec4 u_xlat16_2;
+vec3 u_xlat16_3;
+float u_xlat4;
+vec4 u_xlat16_4;
+float u_xlat5;
+bool u_xlatb5;
+float u_xlat16_6;
+float u_xlat9;
+float u_xlat16_11;
+void main(){
+  (u_xlat16_0.x = texture(_MainTex, vs_TEXCOORD0.xy).w);
+  (u_xlat5 = (u_xlat16_0.x + (-vs_TEXCOORD1.x)));
+  (u_xlat0.x = ((-u_xlat16_0.x) + vs_TEXCOORD1.z));
+  (u_xlatb5 = (u_xlat5 < 0.0));
+  if (u_xlatb5)
+  {
+    discard;
+  }
+  (u_xlat5 = (_OutlineWidth * _ScaleRatioA));
+  (u_xlat5 = (u_xlat5 * vs_TEXCOORD1.y));
+  (u_xlat16_1 = min(u_xlat5, 1.0));
+  (u_xlat16_6 = (u_xlat5 * 0.5));
+  (u_xlat16_1 = sqrt(u_xlat16_1));
+  (u_xlat16_11 = ((u_xlat0.x * vs_TEXCOORD1.y) + u_xlat16_6));
+  (u_xlat16_11 = clamp(u_xlat16_11, 0.0, 1.0));
+  (u_xlat16_6 = ((u_xlat0.x * vs_TEXCOORD1.y) + (-u_xlat16_6)));
+  (u_xlat16_1 = (u_xlat16_1 * u_xlat16_11));
+  (u_xlat0.xy = ((vec2(_OutlineUVSpeedX, _OutlineUVSpeedY) * _Time.yy) + vs_TEXCOORD5.zw));
+  (u_xlat16_0 = texture(_OutlineTex, u_xlat0.xy));
+  (u_xlat2 = (u_xlat16_0 * _OutlineColor));
+  (u_xlat16_3.xyz = (vs_COLOR0.xyz * _FaceColor.xyz));
+  (u_xlat0.xy = ((vec2(_FaceUVSpeedX, _FaceUVSpeedY) * _Time.yy) + vs_TEXCOORD5.xy));
+  (u_xlat16_4 = texture(_FaceTex, u_xlat0.xy));
+  (u_xlat0.xyz = (u_xlat16_3.xyz * u_xlat16_4.xyz));
+  (u_xlat4 = (u_xlat16_4.w * _FaceColor.w));
+  (u_xlat16_3.xyz = (u_xlat0.xyz * vec3(u_xlat4)));
+  (u_xlat16_2.xyz = ((u_xlat2.xyz * u_xlat2.www) + (-u_xlat16_3.xyz)));
+  (u_xlat16_2.w = ((_OutlineColor.w * u_xlat16_0.w) + (-u_xlat4)));
+  (u_xlat16_2 = (vec4(u_xlat16_1) * u_xlat16_2));
+  (u_xlat16_0.xyz = ((u_xlat0.xyz * vec3(u_xlat4)) + u_xlat16_2.xyz));
+  (u_xlat16_0.w = ((_FaceColor.w * u_xlat16_4.w) + u_xlat16_2.w));
+  (u_xlat4 = (_OutlineSoftness * _ScaleRatioA));
+  (u_xlat9 = (u_xlat4 * vs_TEXCOORD1.y));
+  (u_xlat16_1 = ((u_xlat4 * vs_TEXCOORD1.y) + 1.0));
+  (u_xlat16_6 = ((u_xlat9 * 0.5) + u_xlat16_6));
+  (u_xlat16_1 = (u_xlat16_6 / u_xlat16_1));
+  (u_xlat16_1 = clamp(u_xlat16_1, 0.0, 1.0));
+  (u_xlat16_1 = ((-u_xlat16_1) + 1.0));
+  (u_xlat16_0 = (u_xlat16_0 * vec4(u_xlat16_1)));
+  (SV_Target0 = (u_xlat16_0 * vs_COLOR0.wwww));
+  return ;
+}
