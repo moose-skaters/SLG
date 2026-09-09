@@ -2,30 +2,34 @@ Shader "LastZ/SceneLit"
 {
     Properties
     {
-        [MainTexture] _MainTex("主纹理（RGB 为 sRGB，Alpha 为线性）", 2D) = "white" {}
-        _Color("颜色乘数（线性 RGBA）", Vector) = (1,1,1,1)
+        [MainTexture] _MainTex("主纹理", 2D) = "white" {}
+        _Color("基础颜色", Vector) = (1,1,1,1)
         _Intensity("颜色强度（影响 RGB 和 Alpha）", Float) = 1
         [Toggle] _NoMainTextureOn("用纯白替代纹理 RGB", Float) = 0
         _VertexOffsetY("物体空间 Y 偏移", Float) = 0
-        [Toggle(_ALPHATEST_ON)] _AlphaClip("启用纹理 Alpha 裁切", Float) = 0
+        // 对原纹理 Alpha 裁切，早于颜色、强度和高度 Alpha 计算。
+        [Toggle(_ALPHATEST_ON)] _AlphaClip("启用 Alpha 裁切", Float) = 0
         _CutOff("裁切阈值", Range(0,1)) = 0.5
-        _AlphaIsR("透明度来源（0：纹理 Alpha，1：Color a通道乘纹理R通道）", Range(0,1)) = 0
-        _AlphFadeY_ON("启用世界高度 Alpha 控制", Range(0,1)) = 0
+        _AlphaIsR("透明度来源（0=Alpha，1=调色后的 R）", Range(0,1)) = 0
+        _AlphFadeY_ON("世界高度 Alpha 控制", Range(0,1)) = 0
         _FadeY("世界 Y 可见阈值", Float) = 0
 
-        _HeroDayNight_ON("角色昼夜光照权重（0=场景光照，1=角色光照）", Range(0,1)) = 0
+        // 此处在游戏场景光与游戏角色光之间选择。
+        [Toggle] _HeroDayNight_ON("启用角色昼夜光照", Float) = 0
         _BlinnPhongOn("Lambert 与 SH 光照（原 BlinnPhongOn）", Range(0,1)) = 0
 
-        [Toggle] _Fresnel_ON("启用菲涅耳", Float) = 0
-        _Fresnel_Color("菲涅耳颜色（线性 RGB）", Vector) = (1,1,1,1)
-        _Fresnel_Color_Edge("边缘菲涅耳颜色（线性 RGB）", Vector) = (0,0,0,0)
-        _Fresnel_Bisa("菲涅耳偏移", Float) = 0
-        _Fresnel_Scale("菲涅耳强度", Float) = 0
-        _Fresnel_Scale_Edge("边缘菲涅耳强度", Float) = 0
-        _Fresnel_Intensity("菲涅耳总强度", Float) = 0
+        // 与 Monster 相同，双项菲涅尔直接加色。
+        [Toggle] _Fresnel_ON("启用菲涅尔", Float) = 0
+        _Fresnel_Color("菲涅尔颜色", Vector) = (1,1,1,1)
+        _Fresnel_Color_Edge("边缘菲涅尔颜色", Vector) = (0,0,0,0)
+        _Fresnel_Bisa("菲涅尔偏移", Float) = 0
+        _Fresnel_Scale("菲涅尔强度", Float) = 0
+        _Fresnel_Scale_Edge("边缘菲涅尔强度", Float) = 0
+        _Fresnel_Intensity("菲涅尔总强度", Float) = 0
 
         [Toggle] _EMISSIONMAPON_ON("启用自发光纹理", Float) = 0
-        [NoScaleOffset] _EmissionMap("自发光 RGB（动画 UV，不使用主纹理 ST）", 2D) = "black" {}
+        // 使用动画 UV，不使用主纹理 ST。
+        [NoScaleOffset] _EmissionMap("自发光纹理（RGB）", 2D) = "black" {}
         _EmissionColor("自发光颜色（线性 HDR RGB）", Vector) = (1,1,1,1)
         _EmissionIntensity("自发光强度", Float) = 1
         [Toggle] _EMISSIONMAPON_BUILDING_ON("建筑自发光开启", Float) = 0
@@ -148,6 +152,8 @@ Shader "LastZ/SceneLit"
                 if (grid.x <= 0 || grid.y <= 0 || frameCount < 1) return meshUV;
                 float timeInFrames = _Time.y * _MainTexSheetAnimSpeed;
                 float wrappedFrame = fmod(timeInFrames, frameCount);
+                // GLSL 用 fract 实现正向取模；fmod 对负时间需手动回绕。
+                if (wrappedFrame < 0.0) wrappedFrame += frameCount;
                 float column = trunc(fmod(wrappedFrame, grid.x));
                 float rowFromTop = trunc(wrappedFrame / grid.x);
                 float row = trunc(grid.y - rowFromTop - 1.0);
@@ -172,14 +178,16 @@ Shader "LastZ/SceneLit"
                 float edgeFactor = 1.0 - saturate(dot(input.normalWS, viewDirection));
                 float edgePower3 = pow(edgeFactor, 3.0);
                 float edgePower5 = pow(edgeFactor, 5.0);
-                return _Fresnel_Color.rgb *(_Fresnel_Bisa + _Fresnel_Scale * edgePower5) * _Fresnel_Intensity+ _Fresnel_Color_Edge.rgb * (edgePower3 * _Fresnel_Scale_Edge) * _Fresnel_Intensity;
+                return _Fresnel_Color.rgb * (_Fresnel_Bisa + _Fresnel_Scale * edgePower5) * _Fresnel_Intensity
+                     + _Fresnel_Color_Edge.rgb * (edgePower3 * _Fresnel_Scale_Edge) * _Fresnel_Intensity;
             }
 
             float3 EvaluateEmission(float2 animatedUV)
             {
-                float3 emissionSample = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap,animatedUV).rgb * _EmissionColor.rgb;
+                float3 emissionSample = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap,
+                    animatedUV).rgb * _EmissionColor.rgb;
                 float3 normalEmission = emissionSample * _EmissionIntensity;
-                float  buildingIntensity = _EmissionIntensity * (1.0 - _Timeline);
+                float buildingIntensity = _EmissionIntensity * (1.0 - _Timeline);
                 float3 buildingEmission = emissionSample * buildingIntensity;
                 return lerp(normalEmission, buildingEmission, _EMISSIONMAPON_BUILDING_ON);
             }
@@ -200,7 +208,8 @@ Shader "LastZ/SceneLit"
                 
                 float2 animatedUV = GetAnimatedUV(input.uv);
                 float2 mainUV = animatedUV * _MainTex_ST.xy + _MainTex_ST.zw;
-                float4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, mainUV);
+                float4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,
+                    mainUV);
                 
                 #if defined(_ALPHATEST_ON)
                     clip(mainSample.a - _CutOff);

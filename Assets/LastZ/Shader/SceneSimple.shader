@@ -2,9 +2,9 @@ Shader "LastZ/SceneSimple"
 {
     Properties
     {
-        [MainTexture] [NoScaleOffset] _MainTex("主纹理（RGB 为 sRGB，Alpha 为线性）", 2D) = "white" {}
-        _Color("颜色", Color) = (1,1,1,1)
-        _AlphaIsR("透明度来源（0：纹理 Alpha，1：Color a通道乘纹理R通道）", Range(0,1)) = 0
+        [MainTexture] [NoScaleOffset] _MainTex("主纹理", 2D) = "white" {}
+        _Color("基础颜色", Color) = (1,1,1,1)
+        _AlphaIsR("透明度来源（0=Alpha，1=调色后的 R）", Range(0,1)) = 0
         _VertexOffsetY("物体空间 Y 偏移", Float) = 0
         
         [Toggle] _BlurPlaneShadowOn("启用屏幕空间平面阴影", Float) = 0
@@ -24,8 +24,6 @@ Shader "LastZ/SceneSimple"
         {
             Name "SceneSimpleForward"
             Tags { "LightMode"="UniversalForward" }
-            Cull Back
-            ZTest LEqual
             ZWrite [_ZWrite]
             Blend [_SrcBlend] [_DstBlend], [_SrcBlendAlpha] [_DstBlendAlpha]
             BlendOp Add, Add
@@ -38,10 +36,8 @@ Shader "LastZ/SceneSimple"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
-            TEXTURE2D(_PlaneBlurShadowMap);
-            SAMPLER(sampler_PlaneBlurShadowMap);
+            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+            TEXTURE2D(_PlaneBlurShadowMap); SAMPLER(sampler_PlaneBlurShadowMap);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
@@ -92,14 +88,15 @@ Shader "LastZ/SceneSimple"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                float4 tintedSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,input.uv) * _Color;
+                float4 tintedSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,
+                    input.uv) * _Color;
                 float opacity = ResolveOpacity(tintedSample);
                 float3 color = tintedSample.rgb;
 
                 if (_BlurPlaneShadowOn != 0)
                 {
                     float2 screenUV = input.screenPosition.xy / input.screenPosition.w;
-                    float shadowVisibility = SAMPLE_TEXTURE2D_BIAS(_PlaneBlurShadowMap,sampler_PlaneBlurShadowMap, screenUV, -_GlobalMipBias.x).r;
+                    float shadowVisibility = SAMPLE_TEXTURE2D(_PlaneBlurShadowMap,sampler_PlaneBlurShadowMap, screenUV).r;
                     color *= 0.5 + 0.5 * shadowVisibility;
                 }
 

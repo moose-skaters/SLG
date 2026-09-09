@@ -3,14 +3,15 @@ Shader "LastZ/CharacterSpecular"
     Properties
     {
         // 基础表面与变体
-        [MainTexture] _MainTex("主纹理（", 2D) = "white" {}
-        _BaseColor("基础颜色乘数（线性 RGBA）", Vector) = (1,1,1,1)
-        [Toggle(_ALPHATEST_ON)] _AlphaClip("头发变体：Alpha 裁切并关闭反射", Float) = 0
+        [MainTexture] _MainTex("主纹理", 2D) = "white" {}
+        _BaseColor("基础颜色", Vector) = (1,1,1,1)
+        // 选择头发变体：裁切最终 Alpha，同时关闭反射和菲涅尔。
+        [Toggle(_ALPHATEST_ON)] _AlphaClip("启用 Alpha 裁切", Float) = 0
         _CutValue("头发最终 Alpha 裁切阈值", Range(0,1)) = 0.5
-        _FadeY("头发在此世界 Y 以上可见", Float) = 0
-        _AlphFadeY_ON("头发高度 Alpha 控制", Range(0,1)) = 0
+        _FadeY("世界 Y 可见阈值", Float) = 0
+        _AlphFadeY_ON("世界高度 Alpha 控制", Range(0,1)) = 0
 
-        _SepcularGloss("Mask纹理：R 光滑度、G 皮革、B 布料、A 皮肤", 2D) = "white" {}
+        _SepcularGloss("遮罩纹理（R 光滑度、G 皮革、B 布料、A 皮肤）", 2D) = "white" {}
         _DetailTex("细节遮罩（R 通道）", 2D) = "white" {}
         _SpecColor("高光颜色（线性 RGB）", Vector) = (1,1,1,1)
         _Shininess("高光指数", Range(0.001,4)) = 0.2
@@ -23,18 +24,19 @@ Shader "LastZ/CharacterSpecular"
         _CustomSpecLightDir("自定义高光方向", Vector) = (-0.2,2.96,-2.3,1)
 
         // 立方体反射
-        [NoScaleOffset] _ReflectionMap("六面反射立方体纹理", Cube) = "" {}
-        _ReflectionDecodeParams("HDR 解码：X 倍率、Y 指数、W Alpha 标志", Vector) = (34.49,2.2,0,1)
+        [NoScaleOffset] _ReflectionMap("反射球", Cube) = "" {}
+        _ReflectionDecodeParams("HDR 解码参数（X 倍率、Y 指数、W Alpha 标志）", Vector) = (34.49,2.2,0,1)
         ReflectionDir("反射方向附加偏移 XYZ", Vector) = (0.94,4.2,-0.4,0)
-        _ReflectionIntenSity("HDR 解码前的反射强度", Float) = 1
-        _Reflectivity(" B通道对掠射反射的贡献", Float) = 1
+        // HDR 解码前直接调制采样 RGB 和 Alpha；不使用 Monster 的 0.44 次幂。
+        _ReflectionIntenSity("反射强度", Float) = 1
+        _Reflectivity("B 通道对掠射反射的贡献", Float) = 1
 
-        // 菲涅耳颜色替换
-        [Toggle] _Fresnel_ON("启用菲涅耳", Float) = 0
-        _Fresnel_Color("菲涅耳颜色", Vector) = (1,1,1,1)
-        _Fresnel_Bisa("菲涅耳偏移", Float) = 0
-        _Fresnel_Scale("菲涅耳五强度", Float) = 0
-        _Fresnel_Intensity("菲涅耳强度", Float) = 0
+        // 菲涅尔颜色替换：使用插值，不直接加色。
+        [Toggle] _Fresnel_ON("启用菲涅尔", Float) = 0
+        _Fresnel_Color("菲涅尔颜色", Vector) = (1,1,1,1)
+        _Fresnel_Bisa("菲涅尔偏移", Float) = 0
+        _Fresnel_Scale("菲涅尔强度", Float) = 0
+        _Fresnel_Intensity("菲涅尔总强度", Float) = 0
 
         _ShadowColor("阴影颜色", Vector) = (0.12,0.12,0.12,1)
     }
@@ -46,8 +48,6 @@ Shader "LastZ/CharacterSpecular"
         {
             Name "CharacterSpecularForward"
             Tags { "LightMode"="UniversalForwardOnly" }
-       
-
             HLSLPROGRAM
             #pragma target 3.5
             #pragma vertex CharacterVertex
@@ -138,11 +138,12 @@ Shader "LastZ/CharacterSpecular"
                 return output;
             }
 
-            float3 EvaluateSpecular(float4 packed, float detail, float3 normalWS,float3 viewDirection, float3 mainLightDirection)
+            float3 EvaluateSpecular(float4 packed, float detail, float3 normalWS,
+                                     float3 viewDirection, float3 mainLightDirection)
             {
                 float3 specularDirection = lerp(mainLightDirection, _CustomSpecLightDir.xyz, _CustomSpecLightDir_ON);
                 float3 halfDirection = normalize(viewDirection + specularDirection);
-                float  highlight = pow(max(dot(normalWS, halfDirection), 0.0), _Shininess * 128.0);
+                float highlight = pow(max(dot(normalWS, halfDirection), 0.0), _Shininess * 128.0);
                 float3 highlightColor = _LightColor2.rgb * _SpecColor.rgb * _LightIntensity2 * highlight;
 
                 // Mask纹理 RGBA 分别提供光滑度、皮革、布料和皮肤权重。
