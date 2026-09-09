@@ -17,11 +17,6 @@ Shader "LastZ/HeightGradient"
         _GradientHeightEnd("Full texture at world Y", Float) = 10
         _GradientPower("Power after smoothstep - below 1 reveals texture earlier", Range(0.01,8)) = 0.2
 
-        [Header(Game Environment Color)]
-        // 与 SceneLit 相同的游戏自定义全局量，供学习时直接查看/调整。
-        // 它们不是 URP 主光颜色；不能用场景平行光强度 1.3 替换。
-        _LightColor1("Environment color - linear RGB", Vector) = (0.999986529,0.999987841,0.999995470,1)
-        _LightIntensity1("Environment color intensity", Float) = 1.003173828
     }
 
     SubShader
@@ -47,15 +42,17 @@ Shader "LastZ/HeightGradient"
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
 
+            // 原 GLSL $Globals，由 LastZGlobalShaderParameters 统一设置。
+            float4 _LightColor1;
+            float _LightIntensity1;
+
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
                 float4 _GradientColor;
-                float4 _LightColor1;
                 float _Intensity;
                 float _GradientHeightStart;
                 float _GradientHeightEnd;
                 float _GradientPower;
-                float _LightIntensity1;
             CBUFFER_END
 
             struct Attributes

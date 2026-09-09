@@ -2123,6 +2123,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 568902249}
+  - component: {fileID: 568902250}
   m_Layer: 0
   m_Name: RdocImport
   m_TagString: Untagged
@@ -2235,6 +2236,25 @@ Transform:
   - {fileID: 1965750355}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &568902250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 568902248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fcd1fd788a8463da8b2b4e1d5b4f7a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lightColor1: {x: 0.999986529, y: 0.999987841, z: 0.99999547, w: 1}
+  lightIntensity1: 1.0031738
+  lightColor2: {x: 0.999990225, y: 0.999992967, z: 1, w: 1}
+  lightIntensity2: 1.0000479
+  timeline: 1
+  fogWorldParams: {x: 0, y: 0, z: 0.0025, w: 1}
+  flyOffset: 0
 --- !u!1001 &583183565
 PrefabInstance:
   m_ObjectHideFlags: 0

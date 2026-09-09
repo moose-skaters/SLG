@@ -42,10 +42,6 @@ Shader "LastZ/CharacterSpecular"
         _Fresnel_Scale("Fresnel fifth power scale", Float) = 0
         _Fresnel_Intensity("Fresnel interpolation intensity", Float) = 0
 
-        [Header(Game Lighting)]
-        // 原游戏自定义灯色；与 SceneLit 的 Hero 灯色相同，不是 URP 主灯颜色。
-        _LightColor2("Game light color - linear RGBA", Vector) = (0.999990225,0.999992967,1,1)
-        _LightIntensity2("Game light intensity", Float) = 1.000047922
         _ShadowColor("Tint when unity LightData Z is zero - linear RGB", Vector) = (0.120026499,0.120026499,0.120026499,1)
     }
 
@@ -76,15 +72,18 @@ Shader "LastZ/CharacterSpecular"
             TEXTURE2D(_DetailTex); SAMPLER(sampler_DetailTex);
             TEXTURECUBE(_ReflectionMap); SAMPLER(sampler_ReflectionMap);
 
+            // 原 GLSL $Globals，由 LastZGlobalShaderParameters 统一设置。
+            float4 _LightColor2;
+            float _LightIntensity2;
+
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST, _SepcularGloss_ST, _DetailTex_ST;
                 float4 _BaseColor, _SpecColor, _CustomSpecLightDir, _ShadowColor;
-                float4 _ReflectionDecodeParams, ReflectionDir, _Fresnel_Color, _LightColor2;
+                float4 _ReflectionDecodeParams, ReflectionDir, _Fresnel_Color;
                 float _AlphaClip, _CutValue, _FadeY, _AlphFadeY_ON;
                 float _Shininess, _Smoothness0, _Leather, _Cloth, _Skin, _DetailIntensity;
                 float _CustomSpecLightDir_ON, _ReflectionIntenSity, _Reflectivity;
                 float _Fresnel_ON, _Fresnel_Bisa, _Fresnel_Scale, _Fresnel_Intensity;
-                float _LightIntensity2;
             CBUFFER_END
 
             struct Attributes

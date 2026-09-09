@@ -12,7 +12,6 @@ Shader "LastZ/GeneralVFX"
         [Toggle] _UseCaptureTime("Freeze at captured time",Float)=1
         _CaptureTime("Captured seconds",Float)=126.3208237
         _TextureMipBias("Original total texture mip bias",Float)=-0.584962487
-        _FlyOffset("Clip depth offset in original OpenGL units",Float)=0
 
         [Header(Main and Second Layers)]
         _MainTex("Main texture",2D)="white"{}
@@ -102,6 +101,8 @@ Shader "LastZ/GeneralVFX"
             TEXTURE2D(_MaskTex); SAMPLER(sampler_MaskTex);
             TEXTURE2D(_NoiseTex); SAMPLER(sampler_NoiseTex);
             TEXTURE2D(_DissolveTex); SAMPLER(sampler_DissolveTex);
+            // 原 GLSL $Globals，由 LastZGlobalShaderParameters 统一设置。
+            float _FlyOffset;
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float4 _MainColor;
@@ -150,7 +151,6 @@ Shader "LastZ/GeneralVFX"
                 float _ScreenSpaceUV_ON;
                 float _MNBlendMode;
                 float _Variant;
-                float _FlyOffset;
                 float _TextureMipBias;
                 float _CaptureTime;
                 float _UseCaptureTime;

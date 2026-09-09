@@ -13,13 +13,11 @@ Shader "LastZ/FogOfWar"
         _Level2("Blend inverted R to G", Range(0,1)) = 1
         _Level3("Blend previous result to inverted B", Range(0,1)) = 1
         _Level4("Blend previous result to inverted A", Range(0,1)) = 0
-        _Params("World map - offset XY and scale Z", Vector) = (0,0,0.0025,1)
         _OffsetX("World X offset before map scale", Float) = 7.5
         _OffsetY("World Z offset before map scale", Float) = 0
         _UvScale("Final world map UV scale", Float) = 0.97
         _AlphaDisMin("Coverage remap minimum", Float) = 0.25
         _AlphaDisMax("Coverage remap maximum", Float) = 0.8
-        _Timeline("Daylight amount - 0 night to 1 day", Range(0,1)) = 1
 
         [Header(Cloud Layer)]
         _MainTex("Cloud RGB", 2D) = "white" {}
@@ -80,15 +78,19 @@ Shader "LastZ/FogOfWar"
             TEXTURE2D_X_FLOAT(_FogSceneDepthTexture);
             SAMPLER(sampler_FogSceneDepthTexture);
 
+            // 原 GLSL $Globals，由 LastZGlobalShaderParameters 统一设置。
+            float4 _Params;
+            float _Timeline;
+
             CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST, _BlendNoise_ST, _Params, _FogSpeed;
+                float4 _MainTex_ST, _BlendNoise_ST, _FogSpeed;
                 float4 _Color, _NightColor, _EdgeColor, _NightEdgeColor;
                 float4 _TopColor, _NightTopColor;
                 float4 _FogShadowOffset, _VertexOffset;
                 float4 _FogShadowColor, _FogNightShadowColor;
                 float _UseDepth, _Level2, _Level3, _Level4;
                 float _OffsetX, _OffsetY, _UvScale, _AlphaDisMin, _AlphaDisMax;
-                float _Timeline, _FogFallOff, _FogPowerShadow;
+                float _FogFallOff, _FogPowerShadow;
                 float _UseCapturedTime, _CapturedTime;
             CBUFFER_END
 

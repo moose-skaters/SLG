@@ -3,8 +3,7 @@ Shader "LastZ/SceneSimple"
     Properties
     {
         [MainTexture] [NoScaleOffset] _MainTex("主纹理（RGB 为 sRGB，Alpha 为线性）", 2D) = "white" {}
-
-        _Color("颜色乘数（线性 RGBA）", Vector) = (1,1,1,1)
+        _Color("颜色", Color) = (1,1,1,1)
         _AlphaIsR("透明度来源（0：纹理 Alpha，1：Color a通道乘纹理R通道）", Range(0,1)) = 0
         _VertexOffsetY("物体空间 Y 偏移", Float) = 0
         

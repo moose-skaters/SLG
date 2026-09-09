@@ -7,8 +7,6 @@ Shader "LastZ/SceneTint"
         [MainTexture][NoScaleOffset] _MainTex("Main texture - sRGB",2D)="white"{}
         _SepcularGloss_ST("Original sampled UV scale/offset",Vector)=(1,1,0,0)
         _BaseColor("Tint - linear RGBA",Vector)=(1,1,1,1)
-        _LightColor1("Game environment color - linear RGB",Vector)=(1,1,1,1)
-        _LightIntensity1("Game environment intensity",Float)=1
     }
     SubShader
     {
@@ -28,9 +26,11 @@ Shader "LastZ/SceneTint"
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+            // 原 GLSL $Globals，由 LastZGlobalShaderParameters 统一设置。
+            float4 _LightColor1;
+            float _LightIntensity1;
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor, _LightColor1, _SepcularGloss_ST;
-                float _LightIntensity1;
+                float4 _BaseColor, _SepcularGloss_ST;
             CBUFFER_END
             struct Attributes
             {

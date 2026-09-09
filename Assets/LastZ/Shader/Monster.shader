@@ -27,8 +27,6 @@ Shader "LastZ/Monster"
         _CustomLightDir("Custom light direction - normalized as XYZW", Vector) = (0,0.54,0.13,1)
         _CustomLightIntensity("URP main light color multiplier", Float) = 1
         _HeroDayNight_ON("Main light to game hero color blend", Range(0,1)) = 1
-        _LightColor2("Game hero color - linear RGB", Vector) = (0.999990225,0.999992967,1,1)
-        _LightIntensity2("Game hero color intensity", Float) = 1.000047922
         _DayNightInfluence("Final RGB influence of game hero color", Range(0,1)) = 1
 
         [Header(Emission)]
@@ -73,14 +71,18 @@ Shader "LastZ/Monster"
             TEXTURE2D(_EmissionMap); SAMPLER(sampler_EmissionMap);
             TEXTURECUBE(_ReflectionMap); SAMPLER(sampler_ReflectionMap);
 
+            // 原 GLSL $Globals，由 LastZGlobalShaderParameters 统一设置。
+            float4 _LightColor2;
+            float _LightIntensity2;
+
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST, _MGA_ST, _BaseColor;
                 float4 reflectionDir, _ReflectionDecodeParams;
-                float4 _CustomLightDir, _LightColor2, _EmissiveColor;
+                float4 _CustomLightDir, _EmissiveColor;
                 float4 _Fresnel_Color, _Fresnel_Color_Edge;
                 float _UV2_ON, _MetallicIntensity, _RoughnessIntensity, _AoIntensity;
                 float _ReflectionIntenSity, _CustmLightDir_ON, _CustomLightIntensity, _HeroDayNight_ON;
-                float _LightIntensity2, _DayNightInfluence, _EmissionMap_ON, _EmissiveIntensity;
+                float _DayNightInfluence, _EmissionMap_ON, _EmissiveIntensity;
                 float _Fresnel_ON, _Fresnel_Bisa, _Fresnel_Scale, _Fresnel_Scale_Edge, _Fresnel_Intensity;
             CBUFFER_END
 
