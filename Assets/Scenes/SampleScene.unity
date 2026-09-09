@@ -6373,9 +6373,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4fcd1fd788a8463da8b2b4e1d5b4f7a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightColor1: {x: 0.999986529, y: 0.999987841, z: 0.99999547, w: 1}
+  lightColor1: {x: 0.9999865, y: 0.99998784, z: 0.99999547, w: 1}
   lightIntensity1: 1.0031738
-  lightColor2: {x: 0.999990225, y: 0.999992967, z: 1, w: 1}
+  lightColor2: {x: 0.9999902, y: 0.99999297, z: 1, w: 1}
   lightIntensity2: 1.0000479
   timeline: 1
   fogWorldParams: {x: 0, y: 0, z: 0.0025, w: 1}

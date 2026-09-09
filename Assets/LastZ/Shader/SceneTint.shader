@@ -25,13 +25,16 @@ Shader "LastZ/SceneTint"
             #pragma fragment SceneTintFragment
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
-            // 原 GLSL $Globals，由 LastZGlobalShaderParameters 统一设置。
             float4 _LightColor1;
             float _LightIntensity1;
+            
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseColor, _SepcularGloss_ST;
+                float4 _BaseColor,
+                _SepcularGloss_ST;
             CBUFFER_END
+            
             struct Attributes
             {
                 float3 positionOS : POSITION;
@@ -59,9 +62,9 @@ Shader "LastZ/SceneTint"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-                // 原 texture() 无 bias，不重复叠加 URP 自动全局偏移。
-                float4 tinted=SAMPLE_TEXTURE2D_BIAS(_MainTex,sampler_MainTex,input.uv,-_GlobalMipBias.x)*_BaseColor;
-                // 灯色只影响 RGB，Alpha 只乘一次 BaseColor.a；没有 AlphaClip/SH。
+                
+                float4 tinted = SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,input.uv) * _BaseColor;
+              
                 return float4(tinted.rgb*_LightColor1.rgb*_LightIntensity1,tinted.a);
             }
             ENDHLSL
