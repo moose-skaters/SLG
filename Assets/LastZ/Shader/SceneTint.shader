@@ -1,5 +1,3 @@
-// Program17046：主纹理乘基础色和游戏环境色的透明场景变体。
-// 注意原 FS 使用的是 VS 中 SepcularGloss_ST 变换后的 UV，MainTex_ST 是未使用输出。
 Shader "LastZ/SceneTint"
 {
     Properties
@@ -14,11 +12,11 @@ Shader "LastZ/SceneTint"
         Pass
         {
             Name "SceneTintForward"
-            Tags { "LightMode"="UniversalForwardOnly" }
-            Cull Back
-            ZTest LEqual
+            Tags { "LightMode"="UniversalForward"}
+            
             ZWrite Off
             Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha OneMinusSrcAlpha
+            
             HLSLPROGRAM
             #pragma target 3.5
             #pragma vertex SceneTintVertex
@@ -48,6 +46,7 @@ Shader "LastZ/SceneTint"
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
+            
             Varyings SceneTintVertex(Attributes input)
             {
                 Varyings output=(Varyings)0;
@@ -58,6 +57,7 @@ Shader "LastZ/SceneTint"
                 output.uv=input.uv*_SepcularGloss_ST.xy+_SepcularGloss_ST.zw;
                 return output;
             }
+            
             float4 SceneTintFragment(Varyings input):SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
@@ -67,6 +67,7 @@ Shader "LastZ/SceneTint"
               
                 return float4(tinted.rgb*_LightColor1.rgb*_LightIntensity1,tinted.a);
             }
+            
             ENDHLSL
         }
     }
