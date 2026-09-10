@@ -5,7 +5,6 @@ Shader "LastZ/CharacterSpecular"
         [Header(Surface)]
         [MainTexture] _MainTex("主纹理", 2D) = "white" {}
         _BaseColor("基础颜色", Vector) = (1,1,1,1)
-        // 选择头发变体：裁切最终 Alpha，同时关闭反射和菲涅尔。
         [Toggle(_ALPHATEST_ON)] _AlphaClip("启用 Alpha 裁切", Float) = 0
         _CutValue("头发最终 Alpha 裁切阈值", Range(0,1)) = 0.5
         _FadeY("世界 Y 可见阈值", Float) = 0
@@ -30,7 +29,6 @@ Shader "LastZ/CharacterSpecular"
         [NoScaleOffset] _ReflectionMap("反射球", Cube) = "" {}
         _ReflectionDecodeParams("HDR 解码参数（X 倍率、Y 指数、W Alpha 标志）", Vector) = (34.49,2.2,0,1)
         ReflectionDir("反射方向附加偏移 XYZ", Vector) = (0.94,4.2,-0.4,0)
-        // HDR 解码前直接调制采样 RGB 和 Alpha；不使用 Monster 的 0.44 次幂。
         _ReflectionIntenSity("反射强度", Float) = 1
         _Reflectivity("B 通道对掠射反射的贡献", Float) = 1
 
@@ -51,7 +49,7 @@ Shader "LastZ/CharacterSpecular"
         Pass
         {
             Name "CharacterSpecularForward"
-            Tags { "LightMode"="UniversalForwardOnly" }
+            Tags { "LightMode"="UniversalForward" }
             HLSLPROGRAM
             #pragma target 3.5
             #pragma vertex CharacterVertex
@@ -142,8 +140,7 @@ Shader "LastZ/CharacterSpecular"
                 return output;
             }
 
-            float3 EvaluateSpecular(float4 packed, float detail, float3 normalWS,
-                                     float3 viewDirection, float3 mainLightDirection)
+            float3 EvaluateSpecular(float4 packed, float detail, float3 normalWS,float3 viewDirection, float3 mainLightDirection)
             {
                 float3 specularDirection = lerp(mainLightDirection, _CustomSpecLightDir.xyz, _CustomSpecLightDir_ON);
                 float3 halfDirection = normalize(viewDirection + specularDirection);

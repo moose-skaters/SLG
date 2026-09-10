@@ -4,17 +4,15 @@ Shader "LastZ/HeightGradient"
     {
         [Header(Surface)]
         [MainTexture] [NoScaleOffset] _MainTex("主纹理", 2D) = "white" {}
-        // Vector 保存 GPU CB 中的线性值，避免 Color 属性重复转换。
         _Color("基础颜色", Vector) = (1,1,1,1)
-        _Intensity("颜色强度（影响 RGB 和 Alpha）", Float) = 1
+        _Intensity("颜色强度", Float) = 1
 
         [Space(8)]
         [Header(Height Gradient)]
-        _GradientColor("底部替换颜色（线性 RGB）", Vector) = (0.05,0.05,0.06,1)
-        _GradientHeightStart("底部颜色对应的世界 Y", Float) = 0
-        _GradientHeightEnd("完整纹理对应的世界 Y", Float) = 10
-        _GradientPower("平滑步进后的幂（小于 1 会更早显示纹理）", Range(0.01,8)) = 0.2
-
+        _GradientColor("底部颜色", Vector) = (0.05,0.05,0.06,1)
+        _GradientHeightStart("渐变起始高度", Float) = 0
+        _GradientHeightEnd("渐变结束高度", Float) = 10
+        _GradientPower("渐变对比度", Range(0.01,8)) = 0.2
     }
 
     SubShader
@@ -23,7 +21,7 @@ Shader "LastZ/HeightGradient"
         Pass
         {
             Name "HeightGradientForward"
-            Tags { "LightMode"="UniversalForwardOnly" }
+            Tags { "LightMode"="UniversalForward" }
         
 
             HLSLPROGRAM
