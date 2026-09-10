@@ -22983,7 +22983,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1965750355}
   - component: {fileID: 1965750356}
-  - component: {fileID: 1965750357}
   - component: {fileID: 1965750358}
   m_Layer: 0
   m_Name: RdocCamera
@@ -23018,7 +23017,7 @@ Camera:
   serializedVersion: 2
   m_ClearFlags: 2
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 1}
-  m_projectionMatrixMode: 0
+  m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
   m_Iso: 200
@@ -23058,38 +23057,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &1965750357
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1965750354}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d5d43e7c8e1ab843af81b478ae4f8e7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  capturedProjection:
-    e00: 20.320095
-    e01: 0.00000045446183
-    e02: 0.00000084280344
-    e03: 0.0000141587825
-    e10: -0.00000008255336
-    e11: 11.430053
-    e12: -0.00000031674142
-    e13: -0.00019866889
-    e20: -0.0000000715344
-    e21: -0.0000000074182376
-    e22: -1.002002
-    e23: -2.0020587
-    e30: -0.000000071728316
-    e31: -0.000000016695326
-    e32: -1
-    e33: -0.000010437862
-  captureWidth: 720
-  captureHeight: 1280
-  configured: 1
 --- !u!114 &1965750358
 MonoBehaviour:
   m_ObjectHideFlags: 0
