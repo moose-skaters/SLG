@@ -35,7 +35,7 @@ Shader "LastZ/SceneLit"
         [Toggle] _EMISSIONMAPON_ON("启用自发光纹理", Float) = 0
         // 使用动画 UV，不使用主纹理 ST。
         [NoScaleOffset] _EmissionMap("自发光纹理（RGB）", 2D) = "black" {}
-        _EmissionColor("自发光颜色（线性 HDR RGB）", Vector) = (1,1,1,1)
+        _EmissionColor("自发光颜色", Vector) = (1,1,1,1)
         _EmissionIntensity("自发光强度", Float) = 1
         [Toggle] _EMISSIONMAPON_BUILDING_ON("建筑自发光开启", Float) = 0
 

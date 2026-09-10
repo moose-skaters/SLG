@@ -1,51 +1,48 @@
-// Frame4414: EID3356 (depth shadow) and EID3369 (cloud layer).
-// 原 GLSL：VS29910/FS29911、VS29913/FS29914。
-// 两次绘制共用战争迷雾遮罩，却使用不同的顶点深度和颜色公式。
-// 阅读顺序：FogVertex -> ReadFogCoverage -> EvaluateDepthShadow / EvaluateCloudLayer。
 Shader "LastZ/FogOfWar"
 {
     Properties
     {
         [Header(Fog Layer)]
-        [Enum(CloudLayer,0,DepthShadow,1)] _UseDepth("Layer - EID3369 cloud or EID3356 shadow", Float) = 0
-        [NoScaleOffset] _FogMask("Region levels - RGBA", 2D) = "white" {}
-        [NoScaleOffset] _FogOfWar("Explored world area - R", 2D) = "white" {}
-        _Level2("Blend inverted R to G", Range(0,1)) = 1
-        _Level3("Blend previous result to inverted B", Range(0,1)) = 1
-        _Level4("Blend previous result to inverted A", Range(0,1)) = 0
-        _OffsetX("World X offset before map scale", Float) = 7.5
-        _OffsetY("World Z offset before map scale", Float) = 0
-        _UvScale("Final world map UV scale", Float) = 0.97
-        _AlphaDisMin("Coverage remap minimum", Float) = 0.25
-        _AlphaDisMax("Coverage remap maximum", Float) = 0.8
+        [Enum(CloudLayer,0,DepthShadow,1)] _UseDepth("层类型（0=雾，1=雾阴影）", Float) = 0.00
+        [NoScaleOffset] _FogMask("战争迷雾区域", 2D) = "white" {}
+        [NoScaleOffset] _FogOfWar("已探索区域（R 通道）", 2D) = "white" {}
 
+        _Level2("反相 R 到 G 的混合", Range(0,1)) = 1.00
+        _Level3("上一结果到反相 B 的混合", Range(0,1)) = 1.00
+        _Level4("上一结果到反相 A 的混合", Range(0,1)) = 0.00
+
+        _OffsetX("世界 X 偏移", Float) = 7.50
+        _OffsetY("世界 Z 偏移", Float) = 0.00
+        _UvScale("最终世界地图 UV 缩放", Float) = 0.97
+        _AlphaDisMin("覆盖率最小值", Float) = 0.25
+        _AlphaDisMax("覆盖率最大值", Float) = 0.80
+
+        [Space(8)]
         [Header(Cloud Layer)]
-        _MainTex("Cloud RGB", 2D) = "white" {}
-        _BlendNoise("Top color blend - R", 2D) = "black" {}
-        _FogSpeed("Cloud UV speed XY at t over 20 - noise ZW at t", Vector) = (0.01,0,0,0.02)
-        // Vector 保存原 CB 的线性颜色；不用 Color，避免再次进行 sRGB 转换。
-        _Color("Day fog - linear RGBA", Vector) = (0.15131709,0.16770419,0.22287723,1)
-        _NightColor("Night fog - linear RGB", Vector) = (0.03493075,0.055096,0.09065469,1)
-        _EdgeColor("Day boundary - linear RGB", Vector) = (0.05032558,0.06940866,0.09992069,1)
-        _NightEdgeColor("Night boundary - linear RGB", Vector) = (0.11298516,0.15522255,0.21404114,1)
-        _TopColor("Day cloud top - linear RGB", Vector) = (0.17624077,0.20499742,0.26032731,1)
-        _NightTopColor("Night cloud top - linear RGB", Vector) = (0.03954583,0.06217053,0.08908622,1)
+        _MainTex("云层纹理", 2D) = "white" {}
+        _BlendNoise("混合噪声", 2D) = "black" {}
+        _FogSpeed("云层 UV 速度 XY（_Time.x）与噪声 ZW（_Time.y）", Vector) = (0.01, 0.00, 0.00, 0.02)
 
+        _Color("白天雾颜色", Vector) = (0.15, 0.17, 0.22, 1.00)
+        _NightColor("夜晚雾颜色", Vector) = (0.03, 0.06, 0.09, 1.00)
+        _EdgeColor("白天边界颜色", Vector) = (0.05, 0.07, 0.10, 1.00)
+        _NightEdgeColor("夜晚边界颜色", Vector) = (0.11, 0.16, 0.21, 1.00)
+        _TopColor("白天云顶颜色", Vector) = (0.18, 0.20, 0.26, 1.00)
+        _NightTopColor("夜晚云顶颜色", Vector) = (0.04, 0.06, 0.09, 1.00)
+
+        [Space(8)]
         [Header(Depth Shadow)]
-        _FogShadowOffset("Subtract from original object position - XYZ", Vector) = (0,-0.1,0.01,0)
-        _VertexOffset("Depth comparison bias in eye units - X only", Vector) = (24,0,-0.5,0)
-        _FogFallOff("Depth fade distance in eye units", Float) = 25
-        _FogPowerShadow("Depth fade exponent", Float) = 3
-        _FogShadowColor("Day shadow - linear RGBA", Vector) = (0.02207366,0.02207366,0.02207366,0.90196079)
-        _FogNightShadowColor("Night shadow - linear RGBA", Vector) = (0.01456365,0.02522493,0.0490081,1)
+        _FogShadowOffset("原始对象位置的 XYZ 偏移（相减）", Vector) = (0.00, -0.10, 0.01, 0.00)
+        _VertexOffset("眼空间深度比较偏移（仅使用 X）", Vector) = (24.00, 0.00, -0.50, 0.00)
+        _FogFallOff("眼空间深度淡出距离", Float) = 25.00
+        _FogPowerShadow("深度淡出幂指数", Float) = 3.00
+        _FogShadowColor("白天阴影颜色", Vector) = (0.02, 0.02, 0.02, 0.90)
+        _FogNightShadowColor("夜晚阴影颜色", Vector) = (0.01, 0.03, 0.05, 1.00)
 
-        [Header(Animation)]
-        [Toggle] _UseCapturedTime("Freeze animation at captured time", Float) = 1
-        _CapturedTime("Captured seconds - original Time.y", Float) = 126.320823669434
-
+        [Space(8)]
         [Header(Render State)]
-        [Enum(UnityEngine.Rendering.CullMode)] _Cull("Face culling", Float) = 2
-        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest("Depth comparison", Float) = 4
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull("剔除模式", Float) = 2.00
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest("深度测试", Float) = 4.00
     }
 
     SubShader
@@ -69,10 +66,16 @@ Shader "LastZ/FogOfWar"
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
-            TEXTURE2D(_FogMask); SAMPLER(sampler_FogMask);
-            TEXTURE2D(_FogOfWar); SAMPLER(sampler_FogOfWar);
-            TEXTURE2D(_BlendNoise); SAMPLER(sampler_BlendNoise);
+            // Textures.
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+            TEXTURE2D(_FogMask);
+            SAMPLER(sampler_FogMask);
+            TEXTURE2D(_FogOfWar);
+            SAMPLER(sampler_FogOfWar);
+            TEXTURE2D(_BlendNoise);
+            SAMPLER(sampler_BlendNoise);
+
             // FogDepthSnapshotFeature 在 EID1523 之后、透明绘制之前写入。
             // 这里采样实时深度快照，不绑定导出的 8-bit 深度 TGA。
             TEXTURE2D_X_FLOAT(_FogSceneDepthTexture);
@@ -82,25 +85,47 @@ Shader "LastZ/FogOfWar"
             float4 _Params;
             float _Timeline;
 
+            // Material properties.
             CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST, _BlendNoise_ST, _FogSpeed;
-                float4 _Color, _NightColor, _EdgeColor, _NightEdgeColor;
-                float4 _TopColor, _NightTopColor;
-                float4 _FogShadowOffset, _VertexOffset;
-                float4 _FogShadowColor, _FogNightShadowColor;
-                float _UseDepth, _Level2, _Level3, _Level4;
-                float _OffsetX, _OffsetY, _UvScale, _AlphaDisMin, _AlphaDisMax;
-                float _FogFallOff, _FogPowerShadow;
-                float _UseCapturedTime, _CapturedTime;
+                float4 _MainTex_ST;
+                float4 _BlendNoise_ST;
+                float4 _FogSpeed;
+
+                float4 _Color;
+                float4 _NightColor;
+                float4 _EdgeColor;
+                float4 _NightEdgeColor;
+                float4 _TopColor;
+                float4 _NightTopColor;
+
+                float4 _FogShadowOffset;
+                float4 _VertexOffset;
+                float4 _FogShadowColor;
+                float4 _FogNightShadowColor;
+
+                float _UseDepth;
+                float _Level2;
+                float _Level3;
+                float _Level4;
+                float _OffsetX;
+                float _OffsetY;
+                float _UvScale;
+                float _AlphaDisMin;
+                float _AlphaDisMax;
+                float _FogFallOff;
+                float _FogPowerShadow;
             CBUFFER_END
 
+            // Vertex input from the fog mesh.
             struct Attributes
             {
                 float3 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
+
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
+            // Interpolators shared by the vertex and fragment stages.
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
@@ -108,6 +133,7 @@ Shader "LastZ/FogOfWar"
                 float4 screenPosition : TEXCOORD1;
                 float2 cloudUV : TEXCOORD2;
                 float2 meshUV : TEXCOORD3;
+
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -151,10 +177,8 @@ Shader "LastZ/FogOfWar"
 
             float ReadFogCoverage(float2 meshUV, float3 positionWS)
             {
-                // 原 GLSL 的这四张雾贴图都用 texture(tex,uv)，没有全局 mip bias。
-                // URP 的 SAMPLE_TEXTURE2D 会自动增加 _GlobalMipBias，故在这里抵消。
-                float4 hiddenLevels = 1.0 - SAMPLE_TEXTURE2D_BIAS(
-                    _FogMask, sampler_FogMask, meshUV, -_GlobalMipBias.x);
+                float4 hiddenLevels = 1.0
+                                     - SAMPLE_TEXTURE2D(_FogMask, sampler_FogMask, meshUV);
 
                 // 三次连续 lerp：不是 RGBA 求和，也不是加权 dot。
                 float hiddenRegion = lerp(hiddenLevels.r, hiddenLevels.g, _Level2);
@@ -164,8 +188,11 @@ Shader "LastZ/FogOfWar"
                 float2 worldMapUV = positionWS.xz + float2(_OffsetX, _OffsetY);
                 worldMapUV = worldMapUV * _Params.z + _Params.xy;
                 worldMapUV *= _UvScale;
-                float exploredArea = SAMPLE_TEXTURE2D_BIAS(
-                    _FogOfWar, sampler_FogOfWar, worldMapUV, -_GlobalMipBias.x).r;
+                float exploredArea = SAMPLE_TEXTURE2D(
+                    _FogOfWar,
+                    sampler_FogOfWar,
+                    worldMapUV
+                ).r;
                 return hiddenRegion * saturate(1.0 - exploredArea);
             }
 
@@ -205,19 +232,25 @@ Shader "LastZ/FogOfWar"
                 float3 edgeColor = lerp(_NightEdgeColor.rgb, _EdgeColor.rgb, _Timeline);
                 float3 edgeToInterior = lerp(edgeColor, fogColor, opacity);
 
-                float seconds = _UseCapturedTime > 0.5 ? _CapturedTime : _Time.y;
-                // 保留 _Time.x 与 _Time.y 的 20 倍速度差，不能统一使用 t。
-                float slowSeconds = _UseCapturedTime > 0.5 ? seconds * 0.05 : _Time.x;
+                float seconds = _Time.y;
+                // 保留 _Time.x 与 _Time.y 的 20 倍速度差。
+                float slowSeconds = _Time.x;
                 float2 cloudUV = input.cloudUV + slowSeconds * _FogSpeed.xy;
-                float3 cloudTexture = SAMPLE_TEXTURE2D_BIAS(
-                    _MainTex, sampler_MainTex, cloudUV, -_GlobalMipBias.x).rgb;
+                float3 cloudTexture = SAMPLE_TEXTURE2D(
+                    _MainTex,
+                    sampler_MainTex,
+                    cloudUV
+                ).rgb;
                 float3 texturedCloud = edgeToInterior * cloudTexture;
 
                 float3 cloudTop = lerp(_NightTopColor.rgb, _TopColor.rgb, _Timeline);
                 float2 blendUV = input.meshUV * _BlendNoise_ST.xy + _BlendNoise_ST.zw;
                 blendUV += seconds * _FogSpeed.zw;
-                float topAmount = SAMPLE_TEXTURE2D_BIAS(
-                    _BlendNoise, sampler_BlendNoise, blendUV, -_GlobalMipBias.x).r;
+                float topAmount = SAMPLE_TEXTURE2D(
+                    _BlendNoise,
+                    sampler_BlendNoise,
+                    blendUV
+                ).r;
 
                 // 原 FS 实际先计算 (1-noise)，再反减一次作为 top 权重。
                 float cloudAmount = 1.0 - topAmount;

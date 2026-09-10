@@ -14,7 +14,7 @@ Shader "LastZ/CharacterSpecular"
         [Header(Specular)]
         _SepcularGloss("遮罩纹理（R 光滑度、G 皮革、B 布料、A 皮肤）", 2D) = "white" {}
         _DetailTex("细节遮罩（R 通道）", 2D) = "white" {}
-        _SpecColor("高光颜色（线性 RGB）", Vector) = (1,1,1,1)
+        _SpecColor("高光颜色", Vector) = (1,1,1,1)
         _Shininess("高光指数", Range(0.001,4)) = 0.2
         _Smoothness0("光滑度", Float) = 0.84
         _Leather("皮革高光强度", Float) = 2.5

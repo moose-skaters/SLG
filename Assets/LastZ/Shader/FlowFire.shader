@@ -7,7 +7,7 @@ Shader "LastZ/FlowFire"
     {
         [Header(Main Surface)]
         [MainTexture] _Main_Tex("主纹理（RGB 和 Alpha）", 2D) = "white" {}
-        _Color("主颜色（线性 HDR RGBA）", Vector) = (3.95, 3.95, 3.95, 1.00)
+        _Color("主颜色", Vector) = (3.95, 3.95, 3.95, 1.00)
         _Alpha("最终透明度", Float) = 1.00
         [Toggle] _A_R_ON("使用主纹理 R 通道混合 Alpha", Float) = 0.00
 
@@ -25,7 +25,7 @@ Shader "LastZ/FlowFire"
         [Space(8)]
         [Header(Fire Addition)]
         [NoScaleOffset] _Fire_Tex("火焰形状纹理（R 通道，使用主 UV）", 2D) = "white" {}
-        _Fire_Color("叠加火焰颜色（线性 HDR RGB）", Vector) = (3.00, 0.56, 0.14, 1.00)
+        _Fire_Color("叠加火焰颜色", Vector) = (3.00, 0.56, 0.14, 1.00)
         [Toggle] _Fire_ON("启用火焰颜色", Float) = 1.00
         _Fire_Tex_Soft_Value("火焰阈值柔和度（可为负数）", Float) = -0.33
 

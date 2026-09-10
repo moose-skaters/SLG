@@ -12,10 +12,10 @@ Shader "LastZ/GeneralVFX"
         [Space(8)]
         [Header(Main and Second Layers)]
         _MainTex("主纹理", 2D) = "white" {}
-        _MainColor("主颜色（线性 RGBA）", Vector) = (1.40, 1.01, 0.93, 1.00)
+        _MainColor("主颜色", Vector) = (1.40, 1.01, 0.93, 1.00)
         _MainColorIntensity("主颜色强度", Float) = 0.91
         _MainTex02("第二层纹理", 2D) = "white" {}
-        _Main02Color("第二层颜色（线性 RGBA）", Vector) = (1.00, 1.00, 1.00, 0.13)
+        _Main02Color("第二层颜色", Vector) = (1.00, 1.00, 1.00, 0.13)
         _Main02ColorIntensity("第二层颜色强度", Float) = 0.52
         [Toggle] _MNBlendMode("使用图层相加混合（关闭=相乘）", Float) = 0.00
         [Toggle] _BlackOff("使用纹理 R 通道控制透明度", Float) = 0.00
@@ -40,7 +40,7 @@ Shader "LastZ/GeneralVFX"
         [Toggle] _MaskTexUV("使用自定义 TEXCOORD3 XY 偏移", Float) = 0.00
         [Toggle] _MKWarpMode("限制遮罩 UV 到 0~1", Float) = 0.00
         _MaskType("遮罩类型（0/3 使用 R 与 A 的最小值）", Float) = 0.00
-        _FresnelColor("菲涅尔颜色（线性 RGBA）", Vector) = (1.00, 0.97, 0.95, 1.00)
+        _FresnelColor("菲涅尔颜色", Vector) = (1.00, 0.97, 0.95, 1.00)
         _FresnelColorIntensity("菲涅尔颜色强度", Float) = 1.45
         _FresnelPower("菲涅尔指数", Float) = 0.42
         [Toggle] _FalseFresnel("使用替代世界视线方向", Float) = 0.00
@@ -65,7 +65,7 @@ Shader "LastZ/GeneralVFX"
         [Toggle] _DissolveDirToggle("启用方向性溶解", Float) = 0.00
         [Toggle] _DissolveDir("使用 Y 方向溶解（关闭=X 方向）", Float) = 0.00
         [Toggle] _InvertDissolveDir("反转溶解方向", Float) = 0.00
-        _EdgeColor("溶解边缘颜色（线性 RGB）", Vector) = (1.00, 1.00, 1.00, 1.00)
+        _EdgeColor("溶解边缘颜色", Vector) = (1.00, 1.00, 1.00, 1.00)
         _EdgeColorIntensity("边缘颜色强度", Float) = 1.00
 
         [Space(8)]

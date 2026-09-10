@@ -16,10 +16,10 @@ Shader "LastZ/Ground"
         _Splat2("地表层 2（RGB 颜色，A 高度）", 2D) = "white" {}
         _Splat3("地表层 3（RGB 颜色，A 高度）", 2D) = "white" {}
 
-        _Color_Splat1("地表层 0 颜色（线性 RGB）", Vector) = (0.88,0.75,0.63,0)
-        _Color_Splat2("地表层 1 颜色（线性 RGB）", Vector) = (0.71,0.71,0.71,0)
-        _Color_Splat3("地表层 2 颜色（线性 RGB）", Vector) = (0.50,0.49,0.34,0)
-        _Color_Splat4("地表层 3 颜色（线性 RGB）", Vector) = (0.78,0.70,0.47,0)
+        _Color_Splat1("地表层 0 颜色", Vector) = (0.88,0.75,0.63,0)
+        _Color_Splat2("地表层 1 颜色", Vector) = (0.71,0.71,0.71,0)
+        _Color_Splat3("地表层 2 颜色", Vector) = (0.50,0.49,0.34,0)
+        _Color_Splat4("地表层 3 颜色", Vector) = (0.78,0.70,0.47,0)
         _Color_Splat1_Intensity("地表层 0 强度", Float) = 1
         _Color_Splat2_Intensity("地表层 1 强度", Float) = 1
         _Color_Splat3_Intensity("地表层 2 强度", Float) = 1
@@ -33,7 +33,7 @@ Shader "LastZ/Ground"
         _NormalMinHeight("法线淡出起始相机高度", Float) = 100
         _NormalMaxHeight("法线淡出结束相机高度", Float) = 200
         _Splat_Golobal("远景颜色纹理（网格 UV）", 2D) = "gray" {}
-        _Color_Golobal("远景颜色乘数（线性 RGB）", Vector) = (1,1,1,1)
+        _Color_Golobal("远景颜色乘数", Vector) = (1,1,1,1)
         _MinHeight("远景混合起始相机 Y", Float) = 0
         _MaxHeight("远景混合结束相机 Y", Float) = -5
 
@@ -42,19 +42,19 @@ Shader "LastZ/Ground"
         [Toggle] _FakeNormalOn("启用控制纹理边缘颜色", Float) = 0
         _FakeNormalDir("控制纹理采样 UV 偏移 XY", Vector) = (0.00,0,0,0)
         [Enum(R,0,G,1,B,2,A,3)] _FakeNormalChannel("控制纹理边缘通道", Float) = 0
-        _EdgeColor01("带符号边缘颜色（线性 RGB）", Vector) = (0,0,0,0)
+        _EdgeColor01("带符号边缘颜色", Vector) = (0,0,0,0)
 
         [Space(8)]
         [Header(Screen Masks and Spark)]
         _SparkMap("闪光遮罩 A（网格 UV）", 2D) = "white" {}
-        _SparkColor("闪光颜色（线性 RGB）", Vector) = (1,0.91,0.54,1)
+        _SparkColor("闪光颜色", Vector) = (1,0.91,0.54,1)
         _SparkColorIntensity("闪光强度", Float) = 0.05
         [NoScaleOffset] _SpecMaskMap("屏幕遮罩（R 闪光，G 高光）", 2D) = "black" {}
-        _specColor("高光颜色（线性 RGB）", Vector) = (1,0.85,0.35,1)
+        _specColor("高光颜色", Vector) = (1,0.85,0.35,1)
         _specScale("高光强度", Float) = 0.05
         [Toggle] _BlurPlaneShadowOn("启用模糊平面阴影", Float) = 0
         [NoScaleOffset] _PlaneBlurShadowMap("屏幕阴影 R（白色表示受光）", 2D) = "white" {}
-        _BlurPlaneShadowColor("阴影颜色 RGB 与透明度 A（线性）", Vector) = (0,0,0,0.5)
+        _BlurPlaneShadowColor("阴影颜色 RGB 与透明度 A", Vector) = (0,0,0,0.5)
 
         [Space(8)]
         [Header(Lighting)]

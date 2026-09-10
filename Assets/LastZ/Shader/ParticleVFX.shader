@@ -4,7 +4,7 @@ Shader "LastZ/ParticleVFX"
     {
         [Header(Main Texture and Color)]
         [MainTexture] _Main_Tex("主纹理（RGB 和 Alpha）", 2D) = "white" {}
-        _Main_Color("主颜色（线性 HDR RGBA）", Vector) = (3.00, 3.00, 3.00, 1.00)
+        _Main_Color("主颜色", Vector) = (3.00, 3.00, 3.00, 1.00)
         _Main_UV("主纹理 UV 滚动速度 XY（每秒）", Vector) = (0.00, 0.00, 0.00, 0.00)
         _Main_tex_Rotator("主纹理顺时针旋转角度（绕原点，度）", Float) = 0.00
         _Particle_SpeedUV("使用粒子 UV1 XY 偏移替代时间滚动", Float) = 0.00
@@ -25,7 +25,7 @@ Shader "LastZ/ParticleVFX"
         [Toggle] _ParallaxOn("启用原始切线轴视差", Float) = 0.00
         [Enum(R,0,G,1,B,2,A,3)] _ParallaxChannel("视差高度通道（处理基础 Alpha 后）", Float) = 0.00
         _ParallaxScale("视差 UV 位移强度", Float) = 1.00
-        _ParallaxEdgeColor("视差边缘颜色（线性 RGB）", Vector) = (0.00, 0.00, 0.00, 1.00)
+        _ParallaxEdgeColor("视差边缘颜色", Vector) = (0.00, 0.00, 0.00, 1.00)
 
         [HideInInspector] _Tex_2_ST("未使用的顶点阶段第二组 UV 变换", Vector) = (1.00, 1.00, 0.00, 0.00)
         [HideInInspector] _Tex_2_UV("未使用的顶点阶段第二组 UV 速度", Vector) = (0.00, 0.00, 0.00, 0.00)

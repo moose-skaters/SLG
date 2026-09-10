@@ -4,7 +4,7 @@ Shader "LastZ/SceneTint"
     {
         [MainTexture][NoScaleOffset] _MainTex("Main texture - sRGB",2D)="white"{}
         _SepcularGloss_ST("Original sampled UV scale/offset",Vector)=(1,1,0,0)
-        _BaseColor("Tint - linear RGBA",Vector)=(1,1,1,1)
+        _BaseColor("Tint",Vector)=(1,1,1,1)
     }
     SubShader
     {
