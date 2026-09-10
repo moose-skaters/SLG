@@ -2,6 +2,7 @@ Shader "LastZ/Monster"
 {
     Properties
     {
+        [Header(Surface)]
         [MainTexture] _BaseMap("主纹理", 2D) = "white" {}
         _BaseColor("基础颜色", Vector) = (0.95,0.89,0.81,1)
         [Toggle] _UV2_ON("启用第二套 UV（关闭=UV0，开启=UV1）", Float) = 0
@@ -10,22 +11,30 @@ Shader "LastZ/Monster"
         _RoughnessIntensity("粗糙度", Float) = 1
         _AoIntensity("AO强度", Float) = 1
         
+        [Space(8)]
+        [Header(Reflection)]
         [NoScaleOffset]_ReflectionMap("反射球", Cube) = "" {}
         _ReflectionDecodeParams("HDR 解码参数（X 倍率、Y 指数、W Alpha）", Vector) = (34.49,2.2,0,1)
         reflectionDir("反射方向附加偏移 XYZ", Vector) = (1,1,1,0)
         _ReflectionIntenSity("反射强度", Range(0,8)) = 1
 
+        [Space(8)]
+        [Header(Lighting)]
         [Toggle] _CustmLightDir_ON("启用自定义光方向", Float) = 0
         _CustomLightDir("自定义光方向", Vector) = (0,0.54,0.13,1)
         _CustomLightIntensity("自定义光强度", Float) = 1
         [Toggle] _HeroDayNight_ON("启用角色昼夜光照", Float) = 1
         _DayNightInfluence("游戏角色光对最终 RGB 的影响", Range(0,1)) = 1
 
+        [Space(8)]
+        [Header(Emission)]
         [Toggle] _EmissionMap_ON("使用自发光纹理（关闭时使用 MGA Alpha）", Float) = 0
         [NoScaleOffset] _EmissionMap("自发光纹理（RGB）", 2D) = "black" {}
         _EmissiveColor("自发光颜色", Vector) = (1,1,1,1)
         _EmissiveIntensity("自发光强度", Float) = 0
 
+        [Space(8)]
+        [Header(Fresnel)]
         [Toggle] _Fresnel_ON("启用菲涅尔", Float) = 0
         _Fresnel_Color("菲涅尔颜色", Vector) = (1.41,0,0,1)
         _Fresnel_Color_Edge("边缘菲涅尔颜色", Vector) = (0,0,0,0)

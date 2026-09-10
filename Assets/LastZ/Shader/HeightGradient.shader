@@ -2,13 +2,14 @@ Shader "LastZ/HeightGradient"
 {
     Properties
     {
-        // 纹理表面
+        [Header(Surface)]
         [MainTexture] [NoScaleOffset] _MainTex("主纹理", 2D) = "white" {}
         // Vector 保存 GPU CB 中的线性值，避免 Color 属性重复转换。
         _Color("基础颜色", Vector) = (1,1,1,1)
         _Intensity("颜色强度（影响 RGB 和 Alpha）", Float) = 1
 
-        // 世界高度渐变
+        [Space(8)]
+        [Header(Height Gradient)]
         _GradientColor("底部替换颜色（线性 RGB）", Vector) = (0.05,0.05,0.06,1)
         _GradientHeightStart("底部颜色对应的世界 Y", Float) = 0
         _GradientHeightEnd("完整纹理对应的世界 Y", Float) = 10

@@ -2,6 +2,7 @@ Shader "LastZ/SceneLit"
 {
     Properties
     {
+        [Header(Surface)]
         [MainTexture] _MainTex("主纹理", 2D) = "white" {}
         _Color("基础颜色", Vector) = (1,1,1,1)
         _Intensity("颜色强度（影响 RGB 和 Alpha）", Float) = 1
@@ -14,11 +15,13 @@ Shader "LastZ/SceneLit"
         _AlphFadeY_ON("世界高度 Alpha 控制", Range(0,1)) = 0
         _FadeY("世界 Y 可见阈值", Float) = 0
 
-        // 此处在游戏场景光与游戏角色光之间选择。
+        [Space(8)]
+        [Header(Lighting)]
         [Toggle] _HeroDayNight_ON("启用角色昼夜光照", Float) = 0
         _BlinnPhongOn("Lambert 与 SH 光照（原 BlinnPhongOn）", Range(0,1)) = 0
 
-        // 与 Monster 相同，双项菲涅尔直接加色。
+        [Space(8)]
+        [Header(Fresnel)]
         [Toggle] _Fresnel_ON("启用菲涅尔", Float) = 0
         _Fresnel_Color("菲涅尔颜色", Vector) = (1,1,1,1)
         _Fresnel_Color_Edge("边缘菲涅尔颜色", Vector) = (0,0,0,0)
@@ -27,6 +30,8 @@ Shader "LastZ/SceneLit"
         _Fresnel_Scale_Edge("边缘菲涅尔强度", Float) = 0
         _Fresnel_Intensity("菲涅尔总强度", Float) = 0
 
+        [Space(8)]
+        [Header(Emission)]
         [Toggle] _EMISSIONMAPON_ON("启用自发光纹理", Float) = 0
         // 使用动画 UV，不使用主纹理 ST。
         [NoScaleOffset] _EmissionMap("自发光纹理（RGB）", 2D) = "black" {}
@@ -34,10 +39,14 @@ Shader "LastZ/SceneLit"
         _EmissionIntensity("自发光强度", Float) = 1
         [Toggle] _EMISSIONMAPON_BUILDING_ON("建筑自发光开启", Float) = 0
 
+        [Space(8)]
+        [Header(Animation)]
         [Toggle] _SheetAnimationON("启用纹理序列帧动画", Float) = 0
         _MainTexSheet("序列帧列数 X、行数 Y（ZW 未使用）", Vector) = (1,1,1,1)
         _MainTexSheetAnimSpeed("序列帧播放速度（帧/秒）", Float) = 1
 
+        [Space(8)]
+        [Header(Render State)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("面剔除", Float) = 2
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend("RGB 源混合因子", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend("RGB 目标混合因子", Float) = 0

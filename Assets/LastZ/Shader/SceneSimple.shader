@@ -2,14 +2,19 @@ Shader "LastZ/SceneSimple"
 {
     Properties
     {
+        [Header(Surface)]
         [MainTexture] [NoScaleOffset] _MainTex("主纹理", 2D) = "white" {}
         _Color("基础颜色", Color) = (1,1,1,1)
         _AlphaIsR("透明度来源（0=Alpha，1=调色后的 R）", Range(0,1)) = 0
         _VertexOffsetY("物体空间 Y 偏移", Float) = 0
         
+        [Space(8)]
+        [Header(Shadow)]
         [Toggle] _BlurPlaneShadowOn("启用屏幕空间平面阴影", Float) = 0
         [NoScaleOffset] _PlaneBlurShadowMap("平面阴影（R 通道：白色表示完全受光）", 2D) = "white" {}
 
+        [Space(8)]
+        [Header(Render State)]
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend("RGB 源混合因子", Float) = 5
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend("RGB 目标混合因子", Float) = 10
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendAlpha("Alpha 源混合因子", Float) = 5

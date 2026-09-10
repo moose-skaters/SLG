@@ -1,75 +1,65 @@
-// Frame4414 / EID466 -> Unity 2022.3 / URP 14.
-// 来源：Assets/LastZ/GLSL/EID466_vs.txt、EID466_fs.txt、raw_data.json。
-// 保留原材质属性名（包括 Golobal 拼写），方便对照 CB；内部变量按实际含义命名。
-// 阅读顺序：GroundVertex -> BlendGroundLayers -> BuildLightingNormal -> GroundFragment。
-// 纹理绑定来自 texture_bindings.json，GL texture unit 不等于 GLSL location。
-// Control=5681，BaseNormal=4311，NormalMask/SparkMap=4312，SpecMaskMap=5627，
-// Splat0/1/2/3=5620/5618/5619/5626，Splat_Golobal=4316，PlaneBlurShadowMap=4322。
-// Control/BaseNormal/SpecMask 是线性数据；Splat RGB 是 sRGB，A 不作 gamma 转换。
-// BaseNormal 用普通 RGB 纹理导入，不能用 Unity Normal Map 的 DXT5nm 重打包。
-// 当前材质的六张主要纹理使用 EID466Textures 中保留原始 mip 链的 Texture2D 资产。
-// 双线性 + anisoLevel=0；该项目 ForceEnable 会把 anisoLevel=1 强制提升，改变采样。
-// 四层 Tiling 由材质设置为 25 / 30 / 40 / 30，所有 Offset 为 0。
 Shader "LastZ/Ground"
 {
     Properties
     {
         [Header(Coordinates and Layer Weights)]
-        [Toggle] _WorldUVON("Use world XZ UV", Float) = 1
-        _WorldEdge("World UV size XY and offset ZW", Vector) = (512,512,67.5,122)
-        _Control("Control RGBA - linear weights", 2D) = "red" {}
-        [Toggle] _HeightBlendOn("Blend using layer alpha heights", Float) = 0
-        _Weight("Height blend transition width", Range(0.001,1)) = 0.2
+        [Toggle] _WorldUVON("使用世界 XZ UV", Float) = 1
+        _WorldEdge("世界 UV 尺寸 XY 与偏移 ZW", Vector) = (512,512,67.5,122)
+        _Control("控制纹理 RGBA", 2D) = "red" {}
+        [Toggle] _HeightBlendOn("使用各层 Alpha 高度混合", Float) = 0
+        _Weight("高度混合过渡权重", Range(0.001,1)) = 0.2
 
+        [Space(8)]
         [Header(Four Ground Layers)]
-        _Splat0("Layer 0 - RGB color A height", 2D) = "white" {}
-        _Splat1("Layer 1 - RGB color A height", 2D) = "white" {}
-        _Splat2("Layer 2 - RGB color A height", 2D) = "white" {}
-        _Splat3("Layer 3 - RGB color A height", 2D) = "white" {}
-        // Vector 有意直接存储抓帧中的线性 RGB，避免 Color 属性再次作线性转换。
-        _Color_Splat1("Layer 0 tint - linear RGB", Vector) = (0.879622579,0.752942443,0.630757332,0)
-        _Color_Splat2("Layer 1 tint - linear RGB", Vector) = (0.708376050,0.708376050,0.708376050,0)
-        _Color_Splat3("Layer 2 tint - linear RGB", Vector) = (0.502886593,0.485149980,0.337163657,0)
-        _Color_Splat4("Layer 3 tint - linear RGB", Vector) = (0.783538043,0.701102138,0.467783839,0)
-        _Color_Splat1_Intensity("Layer 0 intensity", Float) = 1
-        _Color_Splat2_Intensity("Layer 1 intensity", Float) = 1
-        _Color_Splat3_Intensity("Layer 2 intensity", Float) = 1
-        _Color_Splat4_Intensity("Layer 3 intensity", Float) = 1
+        _Splat0("地表层 0（RGB 颜色，A 高度）", 2D) = "white" {}
+        _Splat1("地表层 1（RGB 颜色，A 高度）", 2D) = "white" {}
+        _Splat2("地表层 2（RGB 颜色，A 高度）", 2D) = "white" {}
+        _Splat3("地表层 3（RGB 颜色，A 高度）", 2D) = "white" {}
 
+        _Color_Splat1("地表层 0 颜色（线性 RGB）", Vector) = (0.88,0.75,0.63,0)
+        _Color_Splat2("地表层 1 颜色（线性 RGB）", Vector) = (0.71,0.71,0.71,0)
+        _Color_Splat3("地表层 2 颜色（线性 RGB）", Vector) = (0.50,0.49,0.34,0)
+        _Color_Splat4("地表层 3 颜色（线性 RGB）", Vector) = (0.78,0.70,0.47,0)
+        _Color_Splat1_Intensity("地表层 0 强度", Float) = 1
+        _Color_Splat2_Intensity("地表层 1 强度", Float) = 1
+        _Color_Splat3_Intensity("地表层 2 强度", Float) = 1
+        _Color_Splat4_Intensity("地表层 3 强度", Float) = 1
+
+        [Space(8)]
         [Header(Normal and Camera Height)]
-        _BaseNormal("Normal RGB - linear default texture", 2D) = "bump" {}
-        _NormalMask("Normal mask R", 2D) = "white" {}
-        _BaseNormalScale("Normal XY strength", Float) = 1
-        _NormalMinHeight("Normal fade start - camera Y", Float) = 100
-        _NormalMaxHeight("Normal fade end - camera Y", Float) = 200
-        _Splat_Golobal("Global far color - mesh UV", 2D) = "gray" {}
-        _Color_Golobal("Global tint - linear RGB", Vector) = (1,1,1,1)
-        _MinHeight("Global blend start - camera Y", Float) = 0
-        _MaxHeight("Global blend end - camera Y", Float) = -5
+        _BaseNormal("法线纹理 ", 2D) = "bump" {}
+        _NormalMask("法线遮罩 R", 2D) = "white" {}
+        _BaseNormalScale("法线强度", Float) = 1
+        _NormalMinHeight("法线淡出起始相机高度", Float) = 100
+        _NormalMaxHeight("法线淡出结束相机高度", Float) = 200
+        _Splat_Golobal("远景颜色纹理（网格 UV）", 2D) = "gray" {}
+        _Color_Golobal("远景颜色乘数（线性 RGB）", Vector) = (1,1,1,1)
+        _MinHeight("远景混合起始相机 Y", Float) = 0
+        _MaxHeight("远景混合结束相机 Y", Float) = -5
 
+        [Space(8)]
         [Header(Control Edge Color)]
-        [Toggle] _FakeNormalOn("Enable control edge color", Float) = 0
-        _FakeNormalDir("Control sample UV offset XY", Vector) = (0.001,0,0,0)
-        [Enum(R,0,G,1,B,2,A,3)] _FakeNormalChannel("Control edge channel", Float) = 0
-        _EdgeColor01("Signed edge tint - linear RGB", Vector) = (0,0,0,0)
+        [Toggle] _FakeNormalOn("启用控制纹理边缘颜色", Float) = 0
+        _FakeNormalDir("控制纹理采样 UV 偏移 XY", Vector) = (0.00,0,0,0)
+        [Enum(R,0,G,1,B,2,A,3)] _FakeNormalChannel("控制纹理边缘通道", Float) = 0
+        _EdgeColor01("带符号边缘颜色（线性 RGB）", Vector) = (0,0,0,0)
 
+        [Space(8)]
         [Header(Screen Masks and Spark)]
-        [Toggle] _ScreenSpecOn("Screen spark and specular - off for EID1600", Float) = 1
-        _SparkMap("Spark mask A - mesh UV", 2D) = "white" {}
-        _SparkColor("Spark color - linear RGB", Vector) = (1,0.907885075,0.537338912,1)
-        _SparkColorIntensity("Spark intensity", Float) = 0.05
-        [NoScaleOffset] _SpecMaskMap("Screen mask R spark G specular - linear", 2D) = "black" {}
-        _specColor("Specular color - linear RGB", Vector) = (1,0.846985221,0.351418287,1)
-        _specScale("Specular intensity", Float) = 0.05
-        [Toggle] _BlurPlaneShadowOn("Enable blurred plane shadow", Float) = 0
-        [NoScaleOffset] _PlaneBlurShadowMap("Screen shadow R - white is lit", 2D) = "white" {}
-        _BlurPlaneShadowColor("Shadow tint RGB and opacity A - linear", Vector) = (0,0,0,0.5)
-        [Toggle] _FlipScreenMaskY("Flip screen mask UV Y", Float) = 0
+        _SparkMap("闪光遮罩 A（网格 UV）", 2D) = "white" {}
+        _SparkColor("闪光颜色（线性 RGB）", Vector) = (1,0.91,0.54,1)
+        _SparkColorIntensity("闪光强度", Float) = 0.05
+        [NoScaleOffset] _SpecMaskMap("屏幕遮罩（R 闪光，G 高光）", 2D) = "black" {}
+        _specColor("高光颜色（线性 RGB）", Vector) = (1,0.85,0.35,1)
+        _specScale("高光强度", Float) = 0.05
+        [Toggle] _BlurPlaneShadowOn("启用模糊平面阴影", Float) = 0
+        [NoScaleOffset] _PlaneBlurShadowMap("屏幕阴影 R（白色表示受光）", 2D) = "white" {}
+        _BlurPlaneShadowColor("阴影颜色 RGB 与透明度 A（线性）", Vector) = (0,0,0,0.5)
 
+        [Space(8)]
         [Header(Lighting)]
-        _LightColorDesat("Main light saturation - 0 gray 1 color", Range(0,1)) = 1
-        _TextureMipBias("Texture LOD bias - capture was -0.5849625", Float) = -0.584962487
-        _AlphaScale("Output alpha - opaque capture has alpha 0", Range(0,1)) = 0
+        _LightColorDesat("主光去饱和度（0=灰度，1=彩色）", Range(0,1)) = 1
+        _AlphaScale("输出 Alpha", Range(0,1)) = 0
     }
 
     SubShader
@@ -78,14 +68,8 @@ Shader "LastZ/Ground"
         Pass
         {
             Name "GroundForward"
-            Tags { "LightMode"="UniversalForwardOnly" }
-            // EID466 固定管线：背面剔除、LEqual、关闭深度写入和混合。
-            // Alpha=0 不等于透明：本 draw 的 Blend 被禁用，RGB 仍完整写入。
-            Cull Back
-            ZTest LEqual
+            Tags { "LightMode"="UniversalForward" }
             ZWrite Off
-            Blend Off
-            ColorMask RGBA
 
             HLSLPROGRAM
             #pragma target 3.5
@@ -109,25 +93,48 @@ Shader "LastZ/Ground"
             TEXTURE2D(_PlaneBlurShadowMap); SAMPLER(sampler_PlaneBlurShadowMap);
 
             CBUFFER_START(UnityPerMaterial)
-                float4 _WorldEdge, _Control_ST;
-                float4 _Splat0_ST, _Splat1_ST, _Splat2_ST, _Splat3_ST;
-                float4 _Color_Splat1, _Color_Splat2, _Color_Splat3, _Color_Splat4;
-                float4 _BaseNormal_ST, _NormalMask_ST, _Splat_Golobal_ST;
-                float4 _Color_Golobal, _FakeNormalDir, _EdgeColor01;
-                float4 _SparkMap_ST, _SparkColor, _specColor, _BlurPlaneShadowColor;
-                float _WorldUVON, _HeightBlendOn, _Weight, _BaseNormalScale;
-                float _Color_Splat1_Intensity, _Color_Splat2_Intensity;
-                float _Color_Splat3_Intensity, _Color_Splat4_Intensity;
-                float _NormalMinHeight, _NormalMaxHeight, _MinHeight, _MaxHeight;
-                float _FakeNormalOn, _FakeNormalChannel, _SparkColorIntensity, _specScale;
-                float _BlurPlaneShadowOn, _FlipScreenMaskY, _LightColorDesat;
-                float _TextureMipBias, _AlphaScale, _ScreenSpecOn;
+                float4 _WorldEdge;
+                float4 _Control_ST;
+                float4 _Splat0_ST;
+                float4 _Splat1_ST;
+                float4 _Splat2_ST;
+                float4 _Splat3_ST;
+                float4 _Color_Splat1;
+                float4 _Color_Splat2;
+                float4 _Color_Splat3;
+                float4 _Color_Splat4;
+                float4 _BaseNormal_ST;
+                float4 _NormalMask_ST;
+                float4 _Splat_Golobal_ST;
+                float4 _Color_Golobal;
+                float4 _FakeNormalDir;
+                float4 _EdgeColor01;
+                float4 _SparkMap_ST;
+                float4 _SparkColor;
+                float4 _specColor;
+                float4 _BlurPlaneShadowColor;
+                float _WorldUVON;
+                float _HeightBlendOn;
+                float _Weight;
+                float _BaseNormalScale;
+                float _Color_Splat1_Intensity;
+                float _Color_Splat2_Intensity;
+                float _Color_Splat3_Intensity;
+                float _Color_Splat4_Intensity;
+                float _NormalMinHeight;
+                float _NormalMaxHeight;
+                float _MinHeight;
+                float _MaxHeight;
+                float _FakeNormalOn;
+                float _FakeNormalChannel;
+                float _SparkColorIntensity;
+                float _specScale;
+                float _BlurPlaneShadowOn;
+                float _LightColorDesat;
+                float _AlphaScale;
             CBUFFER_END
 
-            // URP 14 的 SAMPLE_TEXTURE2D_BIAS 已隐式添加 _GlobalMipBias.x。
-            // 先减去它，使最终 bias 恰为材质值，避免把抓帧 bias 重复相加。
-            #define SAMPLE_GROUND(tex, uv) SAMPLE_TEXTURE2D_BIAS(tex, sampler##tex, uv, (_TextureMipBias - _GlobalMipBias.x))
-            static const float kWeightEpsilon = 0.00006103515625; // GLSL 的 2^-14
+            static const float kWeightEpsilon = 0.00006103515625;
 
             struct Attributes
             {
@@ -140,13 +147,13 @@ Shader "LastZ/Ground"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float2 groundUV : TEXCOORD0;    // 原 vs_TEXCOORD0.zw
-                float4 globalAndSparkUV : TEXCOORD1; // 原 vs_TEXCOORD6
-                float3 normalWS : TEXCOORD2;    // 原 vs_TEXCOORD1.xyz
-                float3 tangentWS : TEXCOORD3;   // 原 vs_TEXCOORD2.xyz
-                float3 bitangentWS : TEXCOORD4; // 原 vs_TEXCOORD3.xyz
-                float3 ambientSH : TEXCOORD5;   // 原 vs_TEXCOORD8
-                float4 screenPosition : TEXCOORD6; // 原 vs_TEXCOORD7
+                float2 groundUV : TEXCOORD0;
+                float4 globalAndSparkUV : TEXCOORD1;
+                float3 normalWS : TEXCOORD2;
+                float3 tangentWS : TEXCOORD3;
+                float3 bitangentWS : TEXCOORD4;
+                float3 ambientSH : TEXCOORD5;
+                float4 screenPosition : TEXCOORD6;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -154,9 +161,6 @@ Shader "LastZ/Ground"
             float CameraHeightRatio(float startHeight, float endHeight)
             {
                 float span = endHeight - startHeight;
-                // 必须保留区间方向！抓帧 Min=0、Max=-5，cameraY=360 时结果是 0。
-                // 仅对原式未定义的同高区间作保护，不把负分母改成正数。
-                if (abs(span) < 1e-6) return step(startHeight, _WorldSpaceCameraPos.y);
                 return saturate((_WorldSpaceCameraPos.y - startHeight) / span);
             }
 
@@ -175,14 +179,10 @@ Shader "LastZ/Ground"
                 output.globalAndSparkUV.zw = input.uv * _SparkMap_ST.xy + _SparkMap_ST.zw;
 
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
-                // 原 VS 没有 TANGENT 输入，而是 cross((0,0,1), normalOS)。
                 float3 tangentOS = float3(-input.normalOS.y, input.normalOS.x, 0);
-                // 水平地表无退化；补一个仅用于竖直法线的稳定回退。
-                if (dot(tangentOS, tangentOS) < 1e-12) tangentOS = float3(1,0,0);
                 output.tangentWS = TransformObjectToWorldDir(tangentOS);
                 output.bitangentWS = cross(output.normalWS, output.tangentWS) * GetOddNegativeScale();
-                // URP 用场景环境光或 Light Probe 填充 unity_SH*。
-                // 原 VS 同样计算完整 L0/L1/L2 SH：保留在顶点求值后插值的顺序。
+
                 output.ambientSH = SampleSH(output.normalWS);
                 output.screenPosition = ComputeScreenPos(output.positionCS);
                 return output;
@@ -206,17 +206,16 @@ Shader "LastZ/Ground"
             GroundLayers BlendGroundLayers(float2 uv)
             {
                 GroundLayers layers;
-                // Control/BaseNormal/NormalMask 原代码只用 ST.xy，故意忽略 ST.zw。
                 float2 controlUV = uv * _Control_ST.xy;
-                float4 control = SAMPLE_GROUND(_Control, controlUV);
+                float4 control = SAMPLE_TEXTURE2D(_Control, sampler_Control, controlUV);
                 float4 neighborControl = control;
                 if (_FakeNormalOn != 0)
-                    neighborControl = SAMPLE_GROUND(_Control, controlUV + _FakeNormalDir.xy);
+                    neighborControl = SAMPLE_TEXTURE2D(_Control, sampler_Control, controlUV + _FakeNormalDir.xy);
 
-                float4 layer0 = SAMPLE_GROUND(_Splat0, uv * _Splat0_ST.xy + _Splat0_ST.zw);
-                float4 layer1 = SAMPLE_GROUND(_Splat1, uv * _Splat1_ST.xy + _Splat1_ST.zw);
-                float4 layer2 = SAMPLE_GROUND(_Splat2, uv * _Splat2_ST.xy + _Splat2_ST.zw);
-                float4 layer3 = SAMPLE_GROUND(_Splat3, uv * _Splat3_ST.xy + _Splat3_ST.zw);
+                float4 layer0 = SAMPLE_TEXTURE2D(_Splat0, sampler_Splat0, uv * _Splat0_ST.xy + _Splat0_ST.zw);
+                float4 layer1 = SAMPLE_TEXTURE2D(_Splat1, sampler_Splat1, uv * _Splat1_ST.xy + _Splat1_ST.zw);
+                float4 layer2 = SAMPLE_TEXTURE2D(_Splat2, sampler_Splat2, uv * _Splat2_ST.xy + _Splat2_ST.zw);
+                float4 layer3 = SAMPLE_TEXTURE2D(_Splat3, sampler_Splat3, uv * _Splat3_ST.xy + _Splat3_ST.zw);
 
                 if (_HeightBlendOn != 0)
                 {
@@ -225,7 +224,7 @@ Shader "LastZ/Ground"
                     // 复用中心点的层高度，不偏移四张 Splat 的采样。
                     neighborControl = HeightBlendWeights(neighborControl, heights);
                 }
-                // 高度混合之后仍再次归一化，这是原 FS 的实际计算顺序。
+                // 高度混合之后仍再次归一化，保持当前计算顺序。
                 layers.weights = control / (dot(control, float4(1,1,1,1)) + kWeightEpsilon);
                 layers.albedo = layers.weights.r * layer0.rgb * _Color_Splat1.rgb * _Color_Splat1_Intensity
                               + layers.weights.g * layer1.rgb * _Color_Splat2.rgb * _Color_Splat2_Intensity
@@ -246,12 +245,11 @@ Shader "LastZ/Ground"
                 float heightRatio = CameraHeightRatio(_NormalMinHeight, _NormalMaxHeight);
                 float smoothFade = heightRatio * heightRatio * (3.0 - 2.0 * heightRatio);
                 float normalStrength = _BaseNormalScale * (1.0 - smoothFade);
-                float3 normalTS = SAMPLE_GROUND(_BaseNormal, input.groundUV * _BaseNormal_ST.xy).rgb * 2.0 - 1.0;
+                float3 normalTS = SAMPLE_TEXTURE2D(_BaseNormal, sampler_BaseNormal,input.groundUV * _BaseNormal_ST.xy).rgb * 2.0 - 1.0;
                 normalTS.xy *= normalStrength;
-                // 原 FS 使用 -T、+B、+N，且不重建 Z、不 normalize。
-                float3 mappedNormal = -input.tangentWS * normalTS.x
-                                    + input.bitangentWS * normalTS.y + input.normalWS * normalTS.z;
-                float normalMask = SAMPLE_GROUND(_NormalMask, input.groundUV * _NormalMask_ST.xy).r;
+
+                float3 mappedNormal = -input.tangentWS * normalTS.x + input.bitangentWS * normalTS.y + input.normalWS * normalTS.z;
+                float normalMask = SAMPLE_TEXTURE2D(_NormalMask, sampler_NormalMask,input.groundUV * _NormalMask_ST.xy).r;
                 return lerp(float3(1,1,1), mappedNormal, normalMask);
             }
 
@@ -263,44 +261,33 @@ Shader "LastZ/Ground"
                 float3 lightingNormal = BuildLightingNormal(input);
 
                 Light mainLight = GetMainLight();
-                // URP 提供向光方向、线性灯色，以及原式的 unity_LightData.z。
-                // 无参数 GetMainLight() 不采样实时阴影，符合原 FS 的光照路径。
                 float3 lightColor = mainLight.color;
-                float lightLuminance = dot(lightColor, float3(0.2126,0.7152,0.0722));
-                lightColor = lerp(lightLuminance.xxx, lightColor, _LightColorDesat);
+                float lightLuminance = Luminance(lightColor);
+                lightColor = lerp(lightLuminance, lightColor, _LightColorDesat);
                 float diffuse = saturate(dot(lightingNormal, mainLight.direction));
                 float3 color = layers.albedo * (lightColor * diffuse * mainLight.distanceAttenuation + input.ambientSH);
 
                 float2 screenUV = input.screenPosition.xy / input.screenPosition.w;
-                screenUV.y = lerp(screenUV.y, 1.0 - screenUV.y, _FlipScreenMaskY);
-                
-                if (_ScreenSpecOn > 0.5)
-                {
-                float sparkMask = SAMPLE_GROUND(_SparkMap, input.globalAndSparkUV.zw).a;
-                float2 screenSpecMask = SAMPLE_GROUND(_SpecMaskMap, screenUV).rg;
-                // 不是 Blinn-Phong/PBR：高光来自屏幕遮罩，闪光只作用于 G/B 两层。
+
+                float sparkMask = SAMPLE_TEXTURE2D(_SparkMap, sampler_SparkMap, input.globalAndSparkUV.zw).a;
+                float2 screenSpecMask = SAMPLE_TEXTURE2D(_SpecMaskMap, sampler_SpecMaskMap, screenUV).rg;
                 float3 spark = sparkMask * _SparkColor.rgb * _SparkColorIntensity * screenSpecMask.r;
                 color += spark * (layers.weights.g + layers.weights.b);
                 color += screenSpecMask.g * _specColor.rgb * _specScale;
-                }
 
-                float3 globalAlbedo = SAMPLE_GROUND(_Splat_Golobal, input.globalAndSparkUV.xy).rgb;
-                float3 globalColor = globalAlbedo * lightColor * _Color_Golobal.rgb;
+                float3 globalAlbedo = SAMPLE_TEXTURE2D(_Splat_Golobal, sampler_Splat_Golobal,input.globalAndSparkUV.xy).rgb;
+                float3 globalColor  = globalAlbedo * lightColor * _Color_Golobal.rgb;
                 color = lerp(color, globalColor, CameraHeightRatio(_MinHeight, _MaxHeight));
 
                 if (_BlurPlaneShadowOn != 0)
                 {
-                    // 原 FS 此采样无 bias，抵消 URP 自动附加的 _GlobalMipBias。
-                    float visibility = SAMPLE_TEXTURE2D_BIAS(_PlaneBlurShadowMap, sampler_PlaneBlurShadowMap,
-                        screenUV, -_GlobalMipBias.x).r;
+                    float visibility = SAMPLE_TEXTURE2D(_PlaneBlurShadowMap, sampler_PlaneBlurShadowMap, screenUV).r;
                     float3 shadowedColor = lerp(color, _BlurPlaneShadowColor.rgb, _BlurPlaneShadowColor.a);
                     color = lerp(shadowedColor, color, visibility);
                 }
+
                 return float4(color, _AlphaScale);
             }
-            // 原 VS 视线向量、TEXCOORD4、TEXCOORD5（含 _HeightBlendScale）未被 FS 读取。
-            // _FakeNormalScale、_Control_TexelSize 在 FS 也未使用，因此不制造虚假的效果控制项。
-            // 原 FS 没有雾、额外灯、实时阴影、PBR/反射探针，这里不额外添加这些运算。
             ENDHLSL
         }
     }

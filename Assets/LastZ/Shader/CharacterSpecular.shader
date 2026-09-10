@@ -2,7 +2,7 @@ Shader "LastZ/CharacterSpecular"
 {
     Properties
     {
-        // 基础表面与变体
+        [Header(Surface)]
         [MainTexture] _MainTex("主纹理", 2D) = "white" {}
         _BaseColor("基础颜色", Vector) = (1,1,1,1)
         // 选择头发变体：裁切最终 Alpha，同时关闭反射和菲涅尔。
@@ -11,6 +11,8 @@ Shader "LastZ/CharacterSpecular"
         _FadeY("世界 Y 可见阈值", Float) = 0
         _AlphFadeY_ON("世界高度 Alpha 控制", Range(0,1)) = 0
 
+        [Space(8)]
+        [Header(Specular)]
         _SepcularGloss("遮罩纹理（R 光滑度、G 皮革、B 布料、A 皮肤）", 2D) = "white" {}
         _DetailTex("细节遮罩（R 通道）", 2D) = "white" {}
         _SpecColor("高光颜色（线性 RGB）", Vector) = (1,1,1,1)
@@ -23,7 +25,8 @@ Shader "LastZ/CharacterSpecular"
         _CustomSpecLightDir_ON("开启自定义高光方向", Range(0,1)) = 1
         _CustomSpecLightDir("自定义高光方向", Vector) = (-0.2,2.96,-2.3,1)
 
-        // 立方体反射
+        [Space(8)]
+        [Header(Reflection)]
         [NoScaleOffset] _ReflectionMap("反射球", Cube) = "" {}
         _ReflectionDecodeParams("HDR 解码参数（X 倍率、Y 指数、W Alpha 标志）", Vector) = (34.49,2.2,0,1)
         ReflectionDir("反射方向附加偏移 XYZ", Vector) = (0.94,4.2,-0.4,0)
@@ -31,7 +34,8 @@ Shader "LastZ/CharacterSpecular"
         _ReflectionIntenSity("反射强度", Float) = 1
         _Reflectivity("B 通道对掠射反射的贡献", Float) = 1
 
-        // 菲涅尔颜色替换：使用插值，不直接加色。
+        [Space(8)]
+        [Header(Fresnel)]
         [Toggle] _Fresnel_ON("启用菲涅尔", Float) = 0
         _Fresnel_Color("菲涅尔颜色", Vector) = (1,1,1,1)
         _Fresnel_Bisa("菲涅尔偏移", Float) = 0
