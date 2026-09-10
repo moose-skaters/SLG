@@ -295,7 +295,8 @@ Shader "LastZ/GeneralVFX"
             float4 FinishPremultiplied(float4 color, float opacity, Varyings input)
             {
                 float alpha = saturate(opacity) * EvaluateHeightFade(input.positionWS.y) * input.vertexColor.a;
-                float luminance = Luminance(color.rgb);
+                // Preserve the captured GLSL grayscale coefficients.
+                float luminance = dot(color.rgb, float3(0.22, 0.707, 0.071));
                 float3 rgb = lerp(color.rgb, luminance, _Desaturate) * input.vertexColor.rgb;
                 return float4(rgb * alpha, alpha);
             }

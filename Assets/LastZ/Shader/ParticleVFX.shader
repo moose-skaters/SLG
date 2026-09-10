@@ -198,7 +198,8 @@ Shader "LastZ/ParticleVFX"
 
             float3 AdjustParticleColor(float3 textureColor, float3 vertexColor)
             {
-                float luminance = Luminance(textureColor);
+                // Preserve the captured GLSL grayscale coefficients.
+                float luminance = dot(textureColor, float3(0.299, 0.587, 0.114));
                 float3 saturatedColor = lerp(luminance.xxx, textureColor, _Saturation);
                 float3 contrastColor = saturate((saturatedColor - 0.5) * _Contrast + 0.5);
                 return contrastColor * _Main_Color.rgb * _Brightness * vertexColor;

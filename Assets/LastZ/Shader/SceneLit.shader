@@ -12,7 +12,7 @@ Shader "LastZ/SceneLit"
         [Toggle(_ALPHATEST_ON)] _AlphaClip("启用 Alpha 裁切", Float) = 0
         _CutOff("裁切阈值", Range(0,1)) = 0.5
         _AlphaIsR("透明度来源（0=Alpha，1=调色后的 R）", Range(0,1)) = 0
-        _AlphFadeY_ON("世界高度 Alpha 控制", Range(0,1)) = 0
+        [Toggle] _AlphFadeY_ON("世界高度 Alpha 控制", Float) = 0
         _FadeY("世界 Y 可见阈值", Float) = 0
 
         [Space(8)]
@@ -158,11 +158,8 @@ Shader "LastZ/SceneLit"
                 if (_SheetAnimationON == 0) return meshUV;
                 float2 grid = _MainTexSheet.xy;
                 float frameCount = trunc(grid.x * grid.y);
-                if (grid.x <= 0 || grid.y <= 0 || frameCount < 1) return meshUV;
                 float timeInFrames = _Time.y * _MainTexSheetAnimSpeed;
                 float wrappedFrame = fmod(timeInFrames, frameCount);
-                // GLSL 用 fract 实现正向取模；fmod 对负时间需手动回绕。
-                if (wrappedFrame < 0.0) wrappedFrame += frameCount;
                 float column = trunc(fmod(wrappedFrame, grid.x));
                 float rowFromTop = trunc(wrappedFrame / grid.x);
                 float row = trunc(grid.y - rowFromTop - 1.0);

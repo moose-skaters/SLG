@@ -6,14 +6,14 @@ Shader "LastZ/CharacterSpecular"
         [MainTexture] _MainTex("主纹理", 2D) = "white" {}
         _BaseColor("基础颜色", Vector) = (1,1,1,1)
         [Toggle(_ALPHATEST_ON)] _AlphaClip("启用 Alpha 裁切", Float) = 0
-        _CutValue("头发最终 Alpha 裁切阈值", Range(0,1)) = 0.5
-        _FadeY("世界 Y 可见阈值", Float) = 0
-        _AlphFadeY_ON("世界高度 Alpha 控制", Range(0,1)) = 0
+        _CutValue("Alpha 裁切阈值", Range(0,1)) = 0.5
+        [Toggle] _AlphFadeY_ON("世界高度 Alpha 控制", Float) = 0
+        _FadeY("Alpha世界高度可见阈值", Float) = 0
 
         [Space(8)]
         [Header(Specular)]
         _SepcularGloss("遮罩纹理（R 光滑度、G 皮革、B 布料、A 皮肤）", 2D) = "white" {}
-        _DetailTex("细节遮罩（R 通道）", 2D) = "white" {}
+        _DetailTex("细节遮罩", 2D) = "white" {}
         _SpecColor("高光颜色", Vector) = (1,1,1,1)
         _Shininess("高光指数", Range(0.001,4)) = 0.2
         _Smoothness0("光滑度", Float) = 0.84
@@ -21,16 +21,16 @@ Shader "LastZ/CharacterSpecular"
         _Cloth("布料高光强度", Float) = 1
         _Skin("皮肤高光强度", Float) = 1
         _DetailIntensity("皮革细节强度", Float) = 0.7
-        _CustomSpecLightDir_ON("开启自定义高光方向", Range(0,1)) = 1
+        [Toggle] _CustomSpecLightDir_ON("开启自定义高光方向", Float) = 1
         _CustomSpecLightDir("自定义高光方向", Vector) = (-0.2,2.96,-2.3,1)
 
         [Space(8)]
         [Header(Reflection)]
         [NoScaleOffset] _ReflectionMap("反射球", Cube) = "" {}
         _ReflectionDecodeParams("HDR 解码参数（X 倍率、Y 指数、W Alpha 标志）", Vector) = (34.49,2.2,0,1)
-        ReflectionDir("反射方向附加偏移 XYZ", Vector) = (0.94,4.2,-0.4,0)
+        ReflectionDir("反射偏移方向", Vector) = (0.94,4.2,-0.4,0)
         _ReflectionIntenSity("反射强度", Float) = 1
-        _Reflectivity("B 通道对掠射反射的贡献", Float) = 1
+        _Reflectivity("反射率", Float) = 1
 
         [Space(8)]
         [Header(Fresnel)]
@@ -68,29 +68,25 @@ Shader "LastZ/CharacterSpecular"
             float _LightIntensity2;
 
             CBUFFER_START(UnityPerMaterial)
-                // 纹理 UV 变换
+
                 float4 _MainTex_ST;
                 float4 _SepcularGloss_ST;
                 float4 _DetailTex_ST;
 
-                // 基础颜色与高光颜色
                 float4 _BaseColor;
                 float4 _SpecColor;
                 float4 _CustomSpecLightDir;
                 float4 _ShadowColor;
 
-                // 反射与菲涅耳颜色
                 float4 _ReflectionDecodeParams;
                 float4 ReflectionDir;
                 float4 _Fresnel_Color;
 
-                // 变体与 Alpha
                 float _AlphaClip;
                 float _CutValue;
                 float _FadeY;
                 float _AlphFadeY_ON;
 
-                // 高光参数
                 float _Shininess;
                 float _Smoothness0;
                 float _Leather;
@@ -98,12 +94,10 @@ Shader "LastZ/CharacterSpecular"
                 float _Skin;
                 float _DetailIntensity;
 
-                // 自定义高光方向与反射强度
                 float _CustomSpecLightDir_ON;
                 float _ReflectionIntenSity;
                 float _Reflectivity;
 
-                // 菲涅耳参数
                 float _Fresnel_ON;
                 float _Fresnel_Bisa;
                 float _Fresnel_Scale;
@@ -120,9 +114,9 @@ Shader "LastZ/CharacterSpecular"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float3 positionWS : TEXCOORD0; 
-                float2 uv : TEXCOORD1;         
-                float3 normalWS : TEXCOORD2;   
+                float3 positionWS : TEXCOORD0;
+                float2 uv : TEXCOORD1;
+                float3 normalWS : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -165,15 +159,14 @@ Shader "LastZ/CharacterSpecular"
                 return scaledRGB * decodeScale;
             }
 
-            float3 EvaluateReflection(float4 packed, float3 baseColor,
-                                      float3 normalWS, float3 viewDirection)
+            //Indirect Specular
+            float3 EvaluateReflection(float4 packed, float3 baseColor,float3 normalWS, float3 viewDirection)
             {
                 float smoothness = packed.r * _Smoothness0;
                 float perceptualRoughness = 1.0 - smoothness;
                 float mipLevel = perceptualRoughness * (1.7 - 0.7 * perceptualRoughness) * 6.0;
                 float3 reflectionDirection = reflect(-viewDirection, normalWS) + ReflectionDir.xyz;
-                float4 encodedReflection = SAMPLE_TEXTURECUBE_LOD(_ReflectionMap, sampler_ReflectionMap,
-                                                                 reflectionDirection, mipLevel);
+                float4 encodedReflection = SAMPLE_TEXTURECUBE_LOD(_ReflectionMap, sampler_ReflectionMap,reflectionDirection, mipLevel);
                 float3 reflection = DecodeReflection(encodedReflection);
 
                 float edge = 1.0 - dot(normalWS, viewDirection);
@@ -199,7 +192,7 @@ Shader "LastZ/CharacterSpecular"
                 float3 normalWS = normalize(input.normalWS);
                 float3 viewDirection = normalize(GetWorldSpaceViewDir(input.positionWS));
                 Light  mainLight = GetMainLight();
-                
+
                 float4 packed = SAMPLE_TEXTURE2D(_SepcularGloss, sampler_SepcularGloss,
                     input.uv * _SepcularGloss_ST.xy + _SepcularGloss_ST.zw);
                 float4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex,
@@ -208,17 +201,16 @@ Shader "LastZ/CharacterSpecular"
                     input.uv * _DetailTex_ST.xy + _DetailTex_ST.zw).r;
                 float4 tintedSample = mainSample * (_LightColor2 * _BaseColor * _LightIntensity2);
                 float3 specular = EvaluateSpecular(packed, detail, normalWS, viewDirection, mainLight.direction);
-                
+
                 float3 shadowColor = lerp(_ShadowColor.rgb, float3(1,1,1), mainLight.distanceAttenuation);
                 float3 color = (tintedSample.rgb + specular) * shadowColor;
-                
+
                 #if !defined(_ALPHATEST_ON)
                     color += EvaluateReflection(packed, tintedSample.rgb, normalWS, viewDirection);
                 #endif
-                #if !defined(_ALPHATEST_ON)
-                    if (_Fresnel_ON > 0.5)
-                        color = ApplyFresnelColor(color, normalWS, viewDirection);
-                #endif
+                
+                if (_Fresnel_ON > 0.5)
+                    color = ApplyFresnelColor(color, normalWS, viewDirection);
 
                 float opacity = tintedSample.a;
                 #if defined(_ALPHATEST_ON)

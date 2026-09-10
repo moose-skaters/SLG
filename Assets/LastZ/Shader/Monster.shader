@@ -15,7 +15,7 @@ Shader "LastZ/Monster"
         [Header(Reflection)]
         [NoScaleOffset]_ReflectionMap("反射球", Cube) = "" {}
         _ReflectionDecodeParams("HDR 解码参数（X 倍率、Y 指数、W Alpha）", Vector) = (34.49,2.2,0,1)
-        reflectionDir("反射方向附加偏移 XYZ", Vector) = (1,1,1,0)
+        reflectionDir("反射偏移方向", Vector) = (1,1,1,0)
         _ReflectionIntenSity("反射强度", Range(0,8)) = 1
 
         [Space(8)]

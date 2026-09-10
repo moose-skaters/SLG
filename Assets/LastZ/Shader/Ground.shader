@@ -46,6 +46,7 @@ Shader "LastZ/Ground"
 
         [Space(8)]
         [Header(Screen Masks and Spark)]
+        [Toggle(_SCREENSPECON_ON)] _ScreenSpecOn("启用屏幕闪光与高光", Float) = 1
         _SparkMap("闪光遮罩 A（网格 UV）", 2D) = "white" {}
         _SparkColor("闪光颜色", Vector) = (1,0.91,0.54,1)
         _SparkColorIntensity("闪光强度", Float) = 0.05
@@ -75,6 +76,7 @@ Shader "LastZ/Ground"
             #pragma target 3.5
             #pragma vertex GroundVertex
             #pragma fragment GroundFragment
+            #pragma shader_feature_local_fragment _ _SCREENSPECON_ON
             #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -268,12 +270,15 @@ Shader "LastZ/Ground"
                 float3 color = layers.albedo * (lightColor * diffuse * mainLight.distanceAttenuation + input.ambientSH);
 
                 float2 screenUV = input.screenPosition.xy / input.screenPosition.w;
-
-                float sparkMask = SAMPLE_TEXTURE2D(_SparkMap, sampler_SparkMap, input.globalAndSparkUV.zw).a;
-                float2 screenSpecMask = SAMPLE_TEXTURE2D(_SpecMaskMap, sampler_SpecMaskMap, screenUV).rg;
-                float3 spark = sparkMask * _SparkColor.rgb * _SparkColorIntensity * screenSpecMask.r;
-                color += spark * (layers.weights.g + layers.weights.b);
-                color += screenSpecMask.g * _specColor.rgb * _specScale;
+                #if defined(_SCREENSPECON_ON)
+                {
+                    float sparkMask = SAMPLE_TEXTURE2D(_SparkMap, sampler_SparkMap, input.globalAndSparkUV.zw).a;
+                    float2 screenSpecMask = SAMPLE_TEXTURE2D(_SpecMaskMap, sampler_SpecMaskMap, screenUV).rg;
+                    float3 spark = sparkMask * _SparkColor.rgb * _SparkColorIntensity * screenSpecMask.r;
+                    color += spark * (layers.weights.g + layers.weights.b);
+                    color += screenSpecMask.g * _specColor.rgb * _specScale;
+                }
+                #endif
 
                 float3 globalAlbedo = SAMPLE_TEXTURE2D(_Splat_Golobal, sampler_Splat_Golobal,input.globalAndSparkUV.xy).rgb;
                 float3 globalColor  = globalAlbedo * lightColor * _Color_Golobal.rgb;

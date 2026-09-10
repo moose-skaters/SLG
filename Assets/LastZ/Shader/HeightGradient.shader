@@ -78,10 +78,8 @@ Shader "LastZ/HeightGradient"
             float EvaluateHeightBlendWeight(float worldHeight)
             {
                 float heightSpan = _GradientHeightEnd - _GradientHeightStart;
-                if (heightSpan == 0.0) return step(_GradientHeightStart, worldHeight);
                 float heightRatio = saturate((worldHeight - _GradientHeightStart) / heightSpan);
                 float smoothHeight = heightRatio * heightRatio * (3.0 - 2.0 * heightRatio);
-                if (smoothHeight <= 0.0) return 0.0;
                 return pow(smoothHeight, _GradientPower);
             }
 
