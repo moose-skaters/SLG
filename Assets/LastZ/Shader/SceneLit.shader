@@ -5,10 +5,10 @@ Shader "LastZ/SceneLit"
         [Header(Surface)]
         [MainTexture] _MainTex("主纹理", 2D) = "white" {}
         _Color("基础颜色", Vector) = (1,1,1,1)
-        _Intensity("颜色强度（影响 RGB 和 Alpha）", Float) = 1
-        [Toggle] _NoMainTextureOn("用纯白替代纹理 RGB", Float) = 0
+        _Intensity("颜色强度", Float) = 1
+        [Toggle] _NoMainTextureOn("无主纹理", Float) = 0
         _VertexOffsetY("物体空间 Y 偏移", Float) = 0
-        // 对原纹理 Alpha 裁切，早于颜色、强度和高度 Alpha 计算。
+
         [Toggle(_ALPHATEST_ON)] _AlphaClip("启用 Alpha 裁切", Float) = 0
         _CutOff("裁切阈值", Range(0,1)) = 0.5
         _AlphaIsR("透明度来源（0=Alpha，1=调色后的 R）", Range(0,1)) = 0
@@ -18,7 +18,7 @@ Shader "LastZ/SceneLit"
         [Space(8)]
         [Header(Lighting)]
         [Toggle] _HeroDayNight_ON("启用角色昼夜光照", Float) = 0
-        _BlinnPhongOn("Lambert 与 SH 光照（原 BlinnPhongOn）", Range(0,1)) = 0
+        _BlinnPhongOn("BlinnPhongOn", Range(0,1)) = 0
 
         [Space(8)]
         [Header(Fresnel)]
@@ -33,8 +33,8 @@ Shader "LastZ/SceneLit"
         [Space(8)]
         [Header(Emission)]
         [Toggle] _EMISSIONMAPON_ON("启用自发光纹理", Float) = 0
-        // 使用动画 UV，不使用主纹理 ST。
-        [NoScaleOffset] _EmissionMap("自发光纹理（RGB）", 2D) = "black" {}
+
+        [NoScaleOffset] _EmissionMap("自发光纹理", 2D) = "black" {}
         _EmissionColor("自发光颜色", Vector) = (1,1,1,1)
         _EmissionIntensity("自发光强度", Float) = 1
         [Toggle] _EMISSIONMAPON_BUILDING_ON("建筑自发光开启", Float) = 0
@@ -42,8 +42,8 @@ Shader "LastZ/SceneLit"
         [Space(8)]
         [Header(Animation)]
         [Toggle] _SheetAnimationON("启用纹理序列帧动画", Float) = 0
-        _MainTexSheet("序列帧列数 X、行数 Y（ZW 未使用）", Vector) = (1,1,1,1)
-        _MainTexSheetAnimSpeed("序列帧播放速度（帧/秒）", Float) = 1
+        _MainTexSheet("序列帧列数 X、行数 Y", Vector) = (1,1,1,1)
+        _MainTexSheetAnimSpeed("序列帧播放速度", Float) = 1
 
         [Space(8)]
         [Header(Render State)]

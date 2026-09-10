@@ -20,7 +20,7 @@ Shader "LastZ/FogOfWarShadow"
         [Header(Depth Shadow)]
         _FogShadowOffset("阴影位置偏移", Vector) = (0.00, -0.10, 0.01, 0.00)
         _VertexOffset("场景深度偏移", Vector) = (24.00, 0.00, -0.50, 0.00)
-        _FogFallOff("阴影衰减距离（眼空间）", Float) = 25.00
+        _FogFallOff("阴影衰减距离", Float) = 25.00
         _FogPowerShadow("阴影深度衰减速率", Float) = 3.00
         _FogShadowColor("白天战争迷雾阴影颜色", Vector) = (0.02, 0.02, 0.02, 0.90)
         _FogNightShadowColor("夜晚战争迷雾阴影颜色", Vector) = (0.01, 0.03, 0.05, 1.00)
@@ -51,13 +51,12 @@ Shader "LastZ/FogOfWarShadow"
             #pragma fragment FogFragment
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             TEXTURE2D(_FogMask);
             SAMPLER(sampler_FogMask);
             TEXTURE2D(_FogOfWar);
             SAMPLER(sampler_FogOfWar);
-            TEXTURE2D_X_FLOAT(_FogSceneDepthTexture);
-            SAMPLER(sampler_FogSceneDepthTexture);
 
             float4 _Params;
             float _Timeline;
@@ -139,7 +138,7 @@ Shader "LastZ/FogOfWarShadow"
             {
                 float opacity = RemapCoverage(coverage);
                 float2 screenUV = input.screenPosition.xy / input.screenPosition.w;
-                float deviceDepth = SAMPLE_TEXTURE2D_X(_FogSceneDepthTexture, sampler_FogSceneDepthTexture, screenUV).r;
+                float deviceDepth = SampleSceneDepth(screenUV);
 
                 float sceneEyeDepth = LinearEyeDepth(deviceDepth, _ZBufferParams);
                 float fogEyeDepth = input.screenPosition.w;

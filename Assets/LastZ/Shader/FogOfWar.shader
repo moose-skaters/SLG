@@ -20,14 +20,14 @@ Shader "LastZ/FogOfWar"
         [Header(Cloud Layer)]
         _MainTex("云层纹理", 2D) = "white" {}
         _BlendNoise("混合噪声", 2D) = "black" {}
-        _FogSpeed("云层 UV 速度 XY（_Time.x）与噪声 ZW（_Time.y）", Vector) = (0.01, 0.00, 0.00, 0.02)
+        _FogSpeed("雾UV速度XY与噪声ZW", Vector) = (0.01, 0.00, 0.00, 0.02)
 
         _Color("白天雾颜色", Vector) = (0.15, 0.17, 0.22, 1.00)
         _NightColor("夜晚雾颜色", Vector) = (0.03, 0.06, 0.09, 1.00)
         _EdgeColor("白天边缘颜色", Vector) = (0.05, 0.07, 0.10, 1.00)
         _NightEdgeColor("白天边缘颜色", Vector) = (0.11, 0.16, 0.21, 1.00)
-        _TopColor("白天云顶颜色", Vector) = (0.18, 0.20, 0.26, 1.00)
-        _NightTopColor("夜晚云顶颜色", Vector) = (0.04, 0.06, 0.09, 1.00)
+        _TopColor("白天顶部颜色", Vector) = (0.18, 0.20, 0.26, 1.00)
+        _NightTopColor("夜晚顶部颜色", Vector) = (0.04, 0.06, 0.09, 1.00)
 
         [Space(8)]
         [Header(Render State)]

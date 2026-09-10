@@ -6,34 +6,34 @@ Shader "LastZ/FlowFire"
     Properties
     {
         [Header(Main Surface)]
-        [MainTexture] _Main_Tex("主纹理（RGB 和 Alpha）", 2D) = "white" {}
+        [MainTexture] _Main_Tex("主纹理", 2D) = "white" {}
         _Color("主颜色", Vector) = (3.95, 3.95, 3.95, 1.00)
-        _Alpha("最终透明度", Float) = 1.00
+        _Alpha("透明度", Float) = 1.00
         [Toggle] _A_R_ON("使用主纹理 R 通道混合 Alpha", Float) = 0.00
 
         [Space(8)]
         [Header(Vertex Flow UV)]
-        _Flowmap_Tex("流动图（RG 为绝对 UV，顶点阶段使用 MIP 1）", 2D) = "gray" {}
-        _Flowmap_UV("流动图滚动速度 XY（每秒）", Vector) = (0.00, 0.00, 0.00, 0.00)
+        _Flowmap_Tex("流动图）", 2D) = "gray" {}
+        _Flowmap_UV("流动图滚动速度 XY", Vector) = (0.00, 0.00, 0.00, 0.00)
 
         [Space(8)]
         [Header(Light Mask)]
-        _Mask_Tex("遮罩纹理（R 通道，仅影响 RGB）", 2D) = "white" {}
-        _LightAngle("遮罩顺时针旋转角度（弧度）", Float) = 0.64
-        _Mask_Power("遮罩幂指数", Float) = 2.33
+        _Mask_Tex("遮罩纹理", 2D) = "white" {}
+        _LightAngle("旋转角度", Float) = 0.64
+        _Mask_Power("遮罩对比度", Float) = 2.33
 
         [Space(8)]
         [Header(Fire Addition)]
-        [NoScaleOffset] _Fire_Tex("火焰形状纹理（R 通道，使用主 UV）", 2D) = "white" {}
-        _Fire_Color("叠加火焰颜色", Vector) = (3.00, 0.56, 0.14, 1.00)
+        [NoScaleOffset] _Fire_Tex("火焰形状纹理", 2D) = "white" {}
+        _Fire_Color("火焰颜色", Vector) = (3.00, 0.56, 0.14, 1.00)
         [Toggle] _Fire_ON("启用火焰颜色", Float) = 1.00
-        _Fire_Tex_Soft_Value("火焰阈值柔和度（可为负数）", Float) = -0.33
+        _Fire_Tex_Soft_Value("火焰柔和度", Float) = -0.33
 
         [Space(8)]
         [Header(Dissolve Alpha)]
-        _Diss_Tex("溶解纹理（R 通道，仅影响 Alpha）", 2D) = "white" {}
-        _Diss_UV("溶解纹理滚动速度 XY（每秒）", Vector) = (0.00, 0.00, 0.00, 0.00)
-        _Diss_Tex_Soft_Value("溶解阈值柔和度", Float) = 0.00
+        _Diss_Tex("溶解纹理（", 2D) = "white" {}
+        _Diss_UV("溶解纹理滚动速度", Vector) = (0.00, 0.00, 0.00, 0.00)
+        _Diss_Tex_Soft_Value("溶解柔和度", Float) = 0.00
 
         [Space(8)]
         [Header(Captured Draw State)]

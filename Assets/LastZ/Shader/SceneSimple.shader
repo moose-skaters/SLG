@@ -11,7 +11,7 @@ Shader "LastZ/SceneSimple"
         [Space(8)]
         [Header(Shadow)]
         [Toggle] _BlurPlaneShadowOn("启用屏幕空间平面阴影", Float) = 0
-        [NoScaleOffset] _PlaneBlurShadowMap("平面阴影（R 通道：白色表示完全受光）", 2D) = "white" {}
+        [NoScaleOffset] _PlaneBlurShadowMap("平面阴影", 2D) = "white" {}
 
         [Space(8)]
         [Header(Render State)]

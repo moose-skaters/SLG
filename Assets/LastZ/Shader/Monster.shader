@@ -24,12 +24,12 @@ Shader "LastZ/Monster"
         _CustomLightDir("自定义光方向", Vector) = (0,0.54,0.13,1)
         _CustomLightIntensity("自定义光强度", Float) = 1
         [Toggle] _HeroDayNight_ON("启用角色昼夜光照", Float) = 1
-        _DayNightInfluence("游戏角色光对最终 RGB 的影响", Range(0,1)) = 1
+        _DayNightInfluence("游戏角色光的影响", Range(0,1)) = 1
 
         [Space(8)]
         [Header(Emission)]
-        [Toggle] _EmissionMap_ON("使用自发光纹理（关闭时使用 MGA Alpha）", Float) = 0
-        [NoScaleOffset] _EmissionMap("自发光纹理（RGB）", 2D) = "black" {}
+        [Toggle] _EmissionMap_ON("使用自发光纹理", Float) = 0
+        [NoScaleOffset] _EmissionMap("自发光纹理", 2D) = "black" {}
         _EmissiveColor("自发光颜色", Vector) = (1,1,1,1)
         _EmissiveIntensity("自发光强度", Float) = 0
 

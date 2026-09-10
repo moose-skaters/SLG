@@ -3,28 +3,28 @@ Shader "LastZ/ParticleVFX"
     Properties
     {
         [Header(Main Texture and Color)]
-        [MainTexture] _Main_Tex("主纹理（RGB 和 Alpha）", 2D) = "white" {}
+        [MainTexture] _Main_Tex("主纹理", 2D) = "white" {}
         _Main_Color("主颜色", Vector) = (3.00, 3.00, 3.00, 1.00)
-        _Main_UV("主纹理 UV 滚动速度 XY（每秒）", Vector) = (0.00, 0.00, 0.00, 0.00)
-        _Main_tex_Rotator("主纹理顺时针旋转角度（绕原点，度）", Float) = 0.00
+        _Main_UV("主纹理 UV 滚动速度 XY", Vector) = (0.00, 0.00, 0.00, 0.00)
+        _Main_tex_Rotator("主纹理旋转角度", Float) = 0.00
         _Particle_SpeedUV("使用粒子 UV1 XY 偏移替代时间滚动", Float) = 0.00
         _Brightness("亮度", Float) = 1.00
         _Saturation("饱和度", Float) = 1.00
-        _Contrast("对比度（围绕 0.5，先限制再乘 HDR 颜色）", Float) = 1.00
+        _Contrast("对比度", Float) = 1.00
 
         [Space(8)]
         [Header(Alpha and Flipbook)]
         _Alpha("透明度", Float) = 1.00
-        _AlphaSub("纹理 Alpha 减去的值（再限制到 0~1）", Float) = 0.00
+        _AlphaSub("纹理 Alpha 减去的值", Float) = 0.00
         _Alpha_NO_R("使用纹理 R 通道混合 Alpha", Float) = 0.00
         [Toggle] _FlipBookBlend_On("使用 UV2 X 混合 UV0 ZW 下一帧", Float) = 0.00
         [Toggle] _AlphaPremultiply("使用最终 Alpha 预乘输出 RGB", Float) = 0.00
 
         [Space(8)]
         [Header(Original One Axis Parallax)]
-        [Toggle] _ParallaxOn("启用原始切线轴视差", Float) = 0.00
-        [Enum(R,0,G,1,B,2,A,3)] _ParallaxChannel("视差高度通道（处理基础 Alpha 后）", Float) = 0.00
-        _ParallaxScale("视差 UV 位移强度", Float) = 1.00
+        [Toggle] _ParallaxOn("启用视差", Float) = 0.00
+        [Enum(R,0,G,1,B,2,A,3)] _ParallaxChannel("视差高度Channel", Float) = 0.00
+        _ParallaxScale("视差强度", Float) = 1.00
         _ParallaxEdgeColor("视差边缘颜色", Vector) = (0.00, 0.00, 0.00, 1.00)
 
         [HideInInspector] _Tex_2_ST("未使用的顶点阶段第二组 UV 变换", Vector) = (1.00, 1.00, 0.00, 0.00)

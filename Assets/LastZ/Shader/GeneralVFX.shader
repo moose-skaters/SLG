@@ -3,7 +3,6 @@ Shader "LastZ/GeneralVFX"
     Properties
     {
         [Header(Feature Keywords)]
-        // 原始五套程序中的功能拆成可独立组合的开关；全部关闭时为基础路径。
         [Toggle(_GENERALVFX_MAIN_ROTATED)] _MainRotated("启用主纹理旋转", Float) = 0.00
         [Toggle(_GENERALVFX_DUAL_MASK_FRESNEL)] _DualMaskFresnel("启用双层遮罩与菲涅尔", Float) = 0.00
         [Toggle(_GENERALVFX_NOISE)] _Noise("启用噪声扰动", Float) = 0.00
@@ -19,38 +18,39 @@ Shader "LastZ/GeneralVFX"
         _Main02ColorIntensity("第二层颜色强度", Float) = 0.52
         [Toggle] _MNBlendMode("使用图层相加混合（关闭=相乘）", Float) = 0.00
         [Toggle] _BlackOff("使用纹理 R 通道控制透明度", Float) = 0.00
-        [Range(0, 1)] _Desaturate("去饱和度（0=原色，1=灰度）", Float) = 1.00
+        [Range(0, 1)] _Desaturate("去饱和度", Float) = 1.00
 
         [Space(8)]
         [Header(UV Mapping)]
         [Toggle] _UVChannel("使用限制后的 UV1（关闭=UV0）", Float) = 0.00
         _mainUVMove("主纹理 UV 滚动 XY 与中心缩放 Z", Vector) = (0.05, 0.10, 1.00, 0.00)
-        _MainAngle("主纹理旋转角度（绕原点）", Float) = 90.00
+        _MainAngle("主纹理旋转角度", Float) = 90.00
         _main02UVMove("第二层 UV 滚动 XY 与中心缩放 Z", Vector) = (0.00, 0.00, 1.00, 1.00)
-        _Main02Angle("第二层旋转角度（绕原点）", Float) = 90.00
+        _Main02Angle("第二层旋转角度", Float) = 90.00
         [Toggle] _particleUV("使用自定义 TEXCOORD2 XY 偏移", Float) = 0.00
-        [Toggle] _ScreenSpaceUV_ON("使用屏幕 UV（关闭=网格 UV）", Float) = 0.00
+        [Toggle] _ScreenSpaceUV_ON("使用屏幕 UV", Float) = 0.00
         [Toggle] _MWarpMode("限制主纹理 UV 到 0~1", Float) = 0.00
         [Toggle] _M02WarpMode("限制第二层 UV 到 0~1", Float) = 0.00
 
         [Space(8)]
         [Header(Mask and Fresnel)]
-        _MaskTex("遮罩纹理（R 与 A 通道）", 2D) = "white" {}
+        _MaskTex("遮罩纹理", 2D) = "white" {}
         _maskUVMove("遮罩 UV 滚动 XY 与中心缩放 Z", Vector) = (0.00, 0.00, 1.00, 1.00)
         [Toggle] _MaskTexUV("使用自定义 TEXCOORD3 XY 偏移", Float) = 0.00
         [Toggle] _MKWarpMode("限制遮罩 UV 到 0~1", Float) = 0.00
-        _MaskType("遮罩类型（0/3 使用 R 与 A 的最小值）", Float) = 0.00
+        
+        _MaskType("遮罩类型", Float) = 0.00
         _FresnelColor("菲涅尔颜色", Vector) = (1.00, 0.97, 0.95, 1.00)
         _FresnelColorIntensity("菲涅尔颜色强度", Float) = 1.45
         _FresnelPower("菲涅尔指数", Float) = 0.42
-        [Toggle] _FalseFresnel("使用替代世界视线方向", Float) = 0.00
-        _FalseViewDir("替代世界视线方向 XYZ", Vector) = (0.00, -1.00, 0.00, 0.00)
+        [Toggle] _FalseFresnel("开启假视线方向", Float) = 0.00
+        _FalseViewDir("假视线方向 XYZ", Vector) = (0.00, -1.00, 0.00, 0.00)
         [Toggle] _BlendMode("使用菲涅尔相加混合（关闭=相乘）", Float) = 0.00
-        [Toggle] _InvertMode("启用反转边缘光与边缘光 Alpha 混合", Float) = 1.00
+        [Toggle] _InvertMode("启用反转边缘光", Float) = 1.00
 
         [Space(8)]
         [Header(Noise Distortion)]
-        _NoiseTex("扰动噪声（G 通道）", 2D) = "gray" {}
+        _NoiseTex("扰动噪声", 2D) = "gray" {}
         _noiseUVMove("噪声 UV 滚动 XY 与中心缩放 Z", Vector) = (0.00, 0.00, 1.00, 1.00)
         [Toggle] _NWarpMode("限制噪声 UV 到 0~1", Float) = 0.00
         _DistortIntensity("固定 UV 扰动强度", Float) = 0.00
@@ -58,7 +58,7 @@ Shader "LastZ/GeneralVFX"
 
         [Space(8)]
         [Header(Dissolve)]
-        _DissolveTex("溶解遮罩（R 通道）", 2D) = "white" {}
+        _DissolveTex("溶解遮罩", 2D) = "white" {}
         _dissolveUVMove("溶解 UV 滚动 XY 与中心缩放 Z", Vector) = (0.00, 0.00, 1.00, 1.00)
         _depc("溶解阈值 X、柔和度 Y、边缘宽度 W", Vector) = (0.50, 0.50, 1.00, 0.00)
         [Toggle] _dissolveMode("使用自定义 TEXCOORD2 Z 溶解阈值", Float) = 1.00

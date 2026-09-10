@@ -3,9 +3,9 @@ Shader "LastZ/Ground"
     Properties
     {
         [Header(Coordinates and Layer Weights)]
-        [Toggle] _WorldUVON("使用世界 XZ UV", Float) = 1
+        [Toggle] _WorldUVON("使用世界坐标UV", Float) = 1
         _WorldEdge("世界 UV 尺寸 XY 与偏移 ZW", Vector) = (512,512,67.5,122)
-        _Control("控制纹理 RGBA", 2D) = "red" {}
+        _Control("控制纹理", 2D) = "red" {}
         [Toggle] _HeightBlendOn("使用各层 Alpha 高度混合", Float) = 0
         _Weight("高度混合过渡权重", Range(0.001,1)) = 0.2
 
@@ -34,15 +34,15 @@ Shader "LastZ/Ground"
         _NormalMaxHeight("法线淡出结束相机高度", Float) = 200
         _Splat_Golobal("远景颜色纹理（网格 UV）", 2D) = "gray" {}
         _Color_Golobal("远景颜色乘数", Vector) = (1,1,1,1)
-        _MinHeight("远景混合起始相机 Y", Float) = 0
-        _MaxHeight("远景混合结束相机 Y", Float) = -5
+        _MinHeight("远景混合起始相机高度", Float) = 0
+        _MaxHeight("远景混合结束相机高度", Float) = -5
 
         [Space(8)]
         [Header(Control Edge Color)]
         [Toggle] _FakeNormalOn("启用控制纹理边缘颜色", Float) = 0
         _FakeNormalDir("控制纹理采样 UV 偏移 XY", Vector) = (0.00,0,0,0)
         [Enum(R,0,G,1,B,2,A,3)] _FakeNormalChannel("控制纹理边缘通道", Float) = 0
-        _EdgeColor01("带符号边缘颜色", Vector) = (0,0,0,0)
+        _EdgeColor01("边缘颜色", Vector) = (0,0,0,0)
 
         [Space(8)]
         [Header(Screen Masks and Spark)]
@@ -54,13 +54,13 @@ Shader "LastZ/Ground"
         _specColor("高光颜色", Vector) = (1,0.85,0.35,1)
         _specScale("高光强度", Float) = 0.05
         [Toggle] _BlurPlaneShadowOn("启用模糊平面阴影", Float) = 0
-        [NoScaleOffset] _PlaneBlurShadowMap("屏幕阴影 R（白色表示受光）", 2D) = "white" {}
-        _BlurPlaneShadowColor("阴影颜色 RGB 与透明度 A", Vector) = (0,0,0,0.5)
+        [NoScaleOffset] _PlaneBlurShadowMap("平面阴影图", 2D) = "white" {}
+        _BlurPlaneShadowColor("阴影颜色", Vector) = (0,0,0,0.5)
 
         [Space(8)]
         [Header(Lighting)]
-        _LightColorDesat("主光去饱和度（0=灰度，1=彩色）", Range(0,1)) = 1
-        _AlphaScale("输出 Alpha", Range(0,1)) = 0
+        _LightColorDesat("主光去饱和度", Range(0,1)) = 1
+        _AlphaScale("输出Alpha", Range(0,1)) = 0
     }
 
     SubShader

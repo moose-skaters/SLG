@@ -2,9 +2,9 @@ Shader "LastZ/SceneTint"
 {
     Properties
     {
-        [MainTexture][NoScaleOffset] _MainTex("Main texture - sRGB",2D)="white"{}
-        _SepcularGloss_ST("Original sampled UV scale/offset",Vector)=(1,1,0,0)
-        _BaseColor("Tint",Vector)=(1,1,1,1)
+        [MainTexture][NoScaleOffset] _MainTex("主纹理",2D)="white"{}
+        _SepcularGloss_ST("UV缩放偏移",Vector)=(1,1,0,0)
+        _BaseColor("主颜色",Vector)=(1,1,1,1)
     }
     SubShader
     {
