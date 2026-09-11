@@ -6,7 +6,7 @@ Shader "LastZ/SceneLit"
         [MainTexture] _MainTex("主纹理", 2D) = "white" {}
         _Color("基础颜色", Vector) = (1,1,1,1)
         _Intensity("颜色强度", Float) = 1
-        [Toggle] _NoMainTextureOn("无主纹理", Float) = 0
+        [Toggle] _NoMainTextureOn("开启没有主纹理", Float) = 0
         _VertexOffsetY("物体空间 Y 偏移", Float) = 0
 
         [Toggle(_ALPHATEST_ON)] _AlphaClip("启用 Alpha 裁切", Float) = 0
